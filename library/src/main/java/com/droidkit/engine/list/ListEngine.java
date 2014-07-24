@@ -156,7 +156,7 @@ public class ListEngine<V> {
         addOrUpdateItem(value, true, true);
     }
 
-    protected synchronized void addOrUpdateItem(V value, boolean update, final boolean add) {
+    protected synchronized void addOrUpdateItem(final V value, boolean update, final boolean add) {
 
         final boolean isAddOnly = !update && add;
         final boolean isUpdateOnly = update && !add;
@@ -173,7 +173,7 @@ public class ListEngine<V> {
                     if (originalValue != null && isAddOrUpdate || isUpdateOnly) {
                         list.remove(originalValue);
                     }
-                    list.add(originalValue);
+                    list.add(value);
                 }
             });
 

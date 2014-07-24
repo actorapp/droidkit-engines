@@ -22,6 +22,7 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.droidkit.core.Logger;
 import com.droidkit.core.Utils;
 import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
@@ -118,6 +119,7 @@ public class TestListEngineActivity extends BaseActivity {
                         try {
                             return DialogTest.parseFrom(item.data);
                         } catch (Exception e) {
+                            Logger.d("tmp", "", e);
                             return null;
                         }
                     }
@@ -227,7 +229,11 @@ public class TestListEngineActivity extends BaseActivity {
                                         count++;
                                         final DialogTest example = DialogTest.newBuilder().
                                                 setId(count).setTime(++time).setTitle("Example Title").setText("Example Text").setStatus(1).setImageUrl("Image Url").setLastMessageSenderName("Example Name").build();
-                                        listEngine.addItem(example);
+                                        try {
+                                            listEngine.addItem(example);
+                                        } catch (Exception e) {
+                                            Logger.d("tmp", "", e);
+                                        }
                                     }
                                     return null;
                                 }
