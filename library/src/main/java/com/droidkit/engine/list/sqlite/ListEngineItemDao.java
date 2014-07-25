@@ -15,7 +15,7 @@ import java.util.ArrayList;
 
 public class ListEngineItemDao<V> {
 
-    private static final String TAG = "ListEngineItemDao";
+    private static final String TAG = "ListEngine";
 
     private static final String TABLENAME_PREFIX = "LIST_ENGINE_ITEM_";
     private static final String COLUMN_LIST_ID = "LIST_ID";
@@ -247,23 +247,13 @@ public class ListEngineItemDao<V> {
             }
         }
 
-        final ArrayList<ListEngineItem> rawList = new ArrayList<ListEngineItem>(count);
-
-
+        final long start = System.currentTimeMillis();
         if (cursor.moveToFirst()) {
             do {
-                rawList.add(new ListEngineItem( //
-                        cursor.isNull(1) ? null : cursor.getLong(1), // id
-                        cursor.isNull(2) ? null : cursor.getLong(2), // sortKey
-                        cursor.isNull(3) ? null : cursor.getBlob(3))); // bytes);
-//                list.add(loadCurrent(cursor, 0, false));
+                list.add(loadCurrent(cursor));
             } while (cursor.moveToNext());
         }
-        final long start = System.currentTimeMillis();
-        for(ListEngineItem i : rawList) {
-            list.add((V) listEngineItemSerializator.deserialize(i));
-        }
-        Logger.d("tmp", "Deserealization time " + (System.currentTimeMillis() - start) + "ms");
+        Logger.d(TAG, "Deserealization time " + (System.currentTimeMillis() - start) + "ms");
         return list;
     }
 

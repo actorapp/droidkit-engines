@@ -1,4 +1,4 @@
-package com.droidkit.view;
+package com.droidkit.sample.view;
 
 import android.content.Context;
 import android.util.AttributeSet;

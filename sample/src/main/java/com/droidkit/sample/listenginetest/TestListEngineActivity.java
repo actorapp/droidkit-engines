@@ -35,7 +35,7 @@ import com.droidkit.engine.list.adapter.SingleListSingleTableDataAdapter;
 import com.droidkit.engine.list.sqlite.DbProvider;
 import com.droidkit.sample.BaseActivity;
 import com.droidkit.util.SafeRunnable;
-import com.droidkit.view.BlockingListView;
+import com.droidkit.sample.view.BlockingListView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
