@@ -42,7 +42,7 @@ android {
             def file = variant.outputFile
             //  Dirty hack
             if (file.name == "sample-release.apk") {
-                variant.outputFile = new File("$project.buildDir/apk/DroidKit-" + defaultConfig.versionName + ".apk")
+                variant.outputFile = new File("$project.buildDir/apk/DroidKitSample-" + defaultConfig.versionName + ".apk")
             }
         }
     }
