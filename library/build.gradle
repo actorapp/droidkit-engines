@@ -16,7 +16,17 @@ android {
             runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+        
+        applicationVariants.all { variant ->
+            def file = variant.outputFile
+            //  Dirty hack
+            if (file.name == "library.aar") {
+                variant.outputFile = new File("$project.buildDir/aar/DroidKit-" + defaultConfig.versionName + ".aar")
+            }
+        }
     }
+    
+    
 }
 
 dependencies {
