@@ -23,7 +23,7 @@ public class Logger {
         if (loop == null) {
             loop = new LogLoop();
             loop.start();
-            loop.sendMessage(Message.obtain(loop.handler, 0, (int) (System.currentTimeMillis() / 1000L), 0, null), 0);
+            loop.postMessage(Message.obtain(loop.handler, 0, (int) (System.currentTimeMillis() / 1000L), 0, null), 0);
         }
     }
 
@@ -118,12 +118,12 @@ public class Logger {
 
     private static void print(int level, String tag, String msg) {
         initialize();
-        loop.sendMessage(Message.obtain(loop.handler, level, new Object[]{tag, msg}), 0);
+        loop.postMessage(Message.obtain(loop.handler, level, new Object[]{tag, msg}), 0);
     }
 
     private static void print(int level, String tag, String msg, Throwable throwable) {
         initialize();
-        loop.sendMessage(Message.obtain(loop.handler, level, (int) (System.currentTimeMillis() / 1000l), 0, new Object[]{tag, msg, throwable}), 0);
+        loop.postMessage(Message.obtain(loop.handler, level, (int) (System.currentTimeMillis() / 1000l), 0, new Object[]{tag, msg, throwable}), 0);
     }
 
     static class LogLoop extends Loop {

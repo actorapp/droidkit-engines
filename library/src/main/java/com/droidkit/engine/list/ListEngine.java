@@ -179,7 +179,7 @@ public class ListEngine<V> {
 
             inMemoryMap.put(id, originalValue);
 
-            loop.sendRunnable(new SafeRunnable() {
+            loop.postRunnable(new SafeRunnable() {
                 @Override
                 public void runSafely() {
                     final long dbStart = SystemClock.uptimeMillis();
@@ -237,7 +237,7 @@ public class ListEngine<V> {
             }
         });
 
-        loop.sendRunnable(new SafeRunnable() {
+        loop.postRunnable(new SafeRunnable() {
             @Override
             public void runSafely() {
                 final long dbStart = SystemClock.uptimeMillis();
@@ -264,7 +264,7 @@ public class ListEngine<V> {
             });
         }
 
-        loop.sendRunnable(new SafeRunnable() {
+        loop.postRunnable(new SafeRunnable() {
             @Override
             public void runSafely() {
                 listEngineDataAdapter.deleteSingle(key);
@@ -280,7 +280,7 @@ public class ListEngine<V> {
         if (!isDbSliceLoadingInProgress && lastSliceSize > 0) {
             isDbSliceLoadingInProgress = true;
 
-            loop.sendRunnable(new Runnable() {
+            loop.postRunnable(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -329,7 +329,7 @@ public class ListEngine<V> {
     }
 
     public synchronized void getValueFromDb(final long key, final ValueCallback<V> valueCallback) {
-        loop.sendRunnable(new SafeRunnable() {
+        loop.postRunnable(new SafeRunnable() {
             @Override
             public void runSafely() {
 //                valueCallback.value(listEngineQueryBuilder.createGetByKeyQueryBuilder(dao, key).unique());
@@ -355,7 +355,7 @@ public class ListEngine<V> {
         });
 
         inMemoryMap.clear();
-        loop.sendRunnable(new SafeRunnable() {
+        loop.postRunnable(new SafeRunnable() {
             @Override
             public void runSafely() {
                 final long dbStart = SystemClock.uptimeMillis();
@@ -407,7 +407,7 @@ public class ListEngine<V> {
     }
 
     private synchronized void modifyInMemoryList(InMemoryListModification<V> modification) {
-        inMemoryListLoop.sendMessage(Message.obtain(inMemoryListLoop.handler, 0, modification), 0);
+        inMemoryListLoop.postMessage(Message.obtain(inMemoryListLoop.handler, 0, modification), 0);
     }
 
     private final Object inMemoryListSync = new Object();
