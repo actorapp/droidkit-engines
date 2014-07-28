@@ -177,7 +177,7 @@ public class NotificationCenter {
                         if(listenerContainer.wasAddedInUIThread) {
                             handler.post(fireEvent);
                         } else {
-                            backgroundFireLoop.sendRunnable(fireEvent, 0);
+                            backgroundFireLoop.postRunnable(fireEvent, 0);
                         }
                     }
                 }

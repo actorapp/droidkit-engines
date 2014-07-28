@@ -26,7 +26,7 @@ public class Loop extends Thread {
         }
     }
 
-    public void sendMessage(Message msg, int delay) {
+    public void postMessage(Message msg, int delay) {
         initializeHandler();
 
         if (handler != null) {
@@ -37,7 +37,7 @@ public class Loop extends Thread {
         }
     }
 
-    public void sendRunnable(Runnable r, int delay) {
+    public void postRunnable(Runnable r, int delay) {
         initializeHandler();
 
         if (handler != null) {
@@ -46,6 +46,10 @@ public class Loop extends Thread {
             else
                 handler.postDelayed(r, delay);
         }
+    }
+
+    public void postRunnable(Runnable r) {
+        this.postRunnable(r, 0);
     }
 
     @Override

@@ -8,6 +8,8 @@ import android.widget.Toast;
 import com.droidkit.util.SafeRunnable;
 
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Utils {
 
@@ -35,4 +37,13 @@ public class Utils {
         return (int)((dp * scale) + 0.5f);
     }
 
+    public static final Pattern pattern = Pattern.compile("[0-9]+");
+
+    public static String parseIntToString(String value) {
+        Matcher matcher = pattern.matcher(value);
+        if (matcher.find()) {
+            return matcher.group(0);
+        }
+        return null;
+    }
 }
