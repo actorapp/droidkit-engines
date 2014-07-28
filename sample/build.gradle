@@ -1,28 +1,60 @@
 apply plugin: 'com.android.application'
 
+def basicVersion = '0.1'
+def customVersionCode = '10240';
+
+if (project.hasProperty('buildIndex')) {
+    project.version = basicVersion + '.' + project.buildIndex
+    customVersionCode = '' + project.buildIndex
+} else {
+    project.version = 'debug'
+}
+
 android {
     compileSdkVersion 20
+    compileSdkVersion 20
     buildToolsVersion '20.0'
-
     defaultConfig {
         minSdkVersion 9
         targetSdkVersion 20
-        versionCode 1
-        versionName "1.0"
+        versionCode Integer.valueOf(customVersionCode)
+        versionName project.version
+    }
+
+    lintOptions {
+        abortOnError false
+    }
+
+    signingConfigs {
+        release {
+            keyAlias = "main"
+        }
     }
 
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             runProguard false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'            
+        }
+
+        applicationVariants.all { variant ->
+            def file = variant.outputFile
+            //  Dirty hack
+            if (file.name == "sample-release.apk") {
+                variant.outputFile = new File("$project.buildDir/apk/DroidKit-" + defaultConfig.versionName + ".apk")
+            }
         }
     }
 
-    defaultConfig {
-        minSdkVersion 9//changed this from default
-        targetSdkVersion 20//changed this from default
-        versionCode 1
-        versionName "1.0"
+    if (project.hasProperty('storeFile') &&
+        project.hasProperty('storePassword') &&
+        project.hasProperty('keyPassword')) {
+        android.signingConfigs.release.storeFile = file(storeFile)
+        android.signingConfigs.release.storePassword = storePassword
+        android.signingConfigs.release.keyPassword = keyPassword
+    } else {
+        buildTypes.release.signingConfig = null
     }
 }
 
