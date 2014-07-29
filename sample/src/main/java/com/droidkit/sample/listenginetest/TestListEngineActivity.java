@@ -92,73 +92,54 @@ public class TestListEngineActivity extends BaseActivity {
             }
         };
 
-        DbProvider.getDatabase(this, new DbProvider.DatabaseCallback() {
+
+
+        final ListEngineClassConnector<DialogTest> classConnector = new ListEngineClassConnector<DialogTest>() {
+            @Override
+            public long getId(DialogTest value) {
+                return value.getId();
+            }
 
             @Override
-            public void onDatabaseOpened(final SQLiteDatabase session) {
-
-                final ListEngineClassConnector<DialogTest> classConnector = new ListEngineClassConnector<DialogTest>() {
-                    @Override
-                    public long getId(DialogTest value) {
-                        return value.getId();
-                    }
-
-                    @Override
-                    public long getSortKey(DialogTest value) {
-                        return value.getTime();
-                    }
-                };
-
-                final ListEngineItemSerializator<DialogTest> serializator = new ListEngineItemSerializator<DialogTest>() {
-                    @Override
-                    public ListEngineItem serialize(DialogTest entity) {
-                        return new ListEngineItem(entity.getId(), entity.getTime(), ((DialogTest) entity).toByteArray());
-                    }
-
-                    @Override
-                    public DialogTest deserialize(ListEngineItem item) {
-                        try {
-                            return DialogTest.parseFrom(item.data);
-                        } catch (Exception e) {
-                            Logger.d("tmp", "", e);
-                            return null;
-                        }
-                    }
-                };
-
-                runOnUiThread(new SafeRunnable() {
-                    @Override
-                    public void runSafely() {
-                        listEngine = new ListEngine<DialogTest>(TestListEngineActivity.this, new Comparator<DialogTest>() {
-                            @Override
-                            public int compare(DialogTest lhs, DialogTest rhs) {
-                                int l = (int) (lhs.getTime() % Integer.MAX_VALUE);
-                                int r = (int) (rhs.getTime() % Integer.MAX_VALUE);
-                                return r - l;
-                            }
-                        }, new SingleListSingleTableDataAdapter(session, "DIALOG", false, serializator),
-                                serializator,
-                                classConnector
-                        );
-                        count = 0;
-//                        listEngine.getLastKeyInDb(new KeyCallback<Long>() {
-//                            @Override
-//                            public void key(Long key) {
-//                                if (key != null) {
-//                                    count = key.longValue();
-//                                } else {
-//                                    count = 0;
-//                                }
-//                            }
-//                        });
-                        adapter = new ExampleAdapter();
-                        lv.setAdapter(adapter);
-                        NotificationCenter.getInstance().addListener(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngine.getUniqueId(), diskLoadListener);
-                        listEngine.loadNextListSlice(PAGE_SIZE);
-                    }
-                });
+            public long getSortKey(DialogTest value) {
+                return value.getTime();
             }
-        });
+        };
+
+        final ListEngineItemSerializator<DialogTest> serializator = new ListEngineItemSerializator<DialogTest>() {
+            @Override
+            public ListEngineItem serialize(DialogTest entity) {
+                return new ListEngineItem(entity.getId(), entity.getTime(), ((DialogTest) entity).toByteArray());
+            }
+
+            @Override
+            public DialogTest deserialize(ListEngineItem item) {
+                try {
+                    return DialogTest.parseFrom(item.data);
+                } catch (Exception e) {
+                    Logger.d("tmp", "", e);
+                    return null;
+                }
+            }
+        };
+
+        listEngine = new ListEngine<DialogTest>(TestListEngineActivity.this, new Comparator<DialogTest>() {
+            @Override
+            public int compare(DialogTest lhs, DialogTest rhs) {
+                int l = (int) (lhs.getTime() % Integer.MAX_VALUE);
+                int r = (int) (rhs.getTime() % Integer.MAX_VALUE);
+                return r - l;
+            }
+        }, new SingleListSingleTableDataAdapter(DbProvider.getDatabase(this), "DIALOG", false, serializator),
+                serializator,
+                classConnector
+        );
+        count = 0;
+        adapter = new ExampleAdapter();
+        lv.setAdapter(adapter);
+        NotificationCenter.getInstance().addListener(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngine.getUniqueId(), diskLoadListener);
+        listEngine.loadNextListSlice(PAGE_SIZE);
+
 
     }
 
