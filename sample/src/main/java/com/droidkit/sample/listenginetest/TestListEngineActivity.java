@@ -31,6 +31,7 @@ import com.droidkit.engine.list.ListEngine;
 import com.droidkit.engine.list.ListEngineClassConnector;
 import com.droidkit.engine.list.ListEngineItem;
 import com.droidkit.engine.list.ListEngineItemSerializator;
+import com.droidkit.engine.list.ValueCallback;
 import com.droidkit.engine.list.adapter.SingleListSingleTableDataAdapter;
 import com.droidkit.engine.list.sqlite.DbProvider;
 import com.droidkit.sample.BaseActivity;

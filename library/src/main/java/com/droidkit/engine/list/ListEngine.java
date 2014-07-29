@@ -313,7 +313,49 @@ public class ListEngine<V> {
                     }
                     isDbSliceLoadingInProgress = false;
                 }
-            }, 0);
+            });
+        }
+    }
+
+    public synchronized void loadAll() {
+        if (!isDbSliceLoadingInProgress && lastSliceSize > 0) {
+            isDbSliceLoadingInProgress = true;
+
+            loop.postRunnable(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Logger.d(TAG, "Loading whole list");
+                        final long start = SystemClock.uptimeMillis();
+
+                        final ArrayList<V> list = listEngineDataAdapter.loadAll();
+
+                        if (list != null) {
+                            lastSliceSize = list.size();
+                            currentDbOffset += lastSliceSize;
+
+                            Logger.d(TAG, "Loaded " + lastSliceSize + " items in " + (SystemClock.uptimeMillis() - start) + "ms");
+                            showDebugToast("loadAll() in " + (SystemClock.uptimeMillis() - start) + "ms");
+
+                            modifyInMemoryList(new InMemoryListModification<V>() {
+                                @Override
+                                public void modify(SortedArrayList<V> targetList) {
+                                    targetList.clear();
+                                    targetList.addAll(list);
+                                }
+                            });
+
+                            for (V val : list) {
+                                inMemoryMap.put(listEngineClassConnector.getId(val), val);
+                            }
+                        }
+
+                    } catch (Exception e) {
+                        Logger.e(TAG, "Error loading DB slice", e);
+                    }
+                    isDbSliceLoadingInProgress = false;
+                }
+            });
         }
     }
 
@@ -332,9 +374,11 @@ public class ListEngine<V> {
         loop.postRunnable(new SafeRunnable() {
             @Override
             public void runSafely() {
-//                valueCallback.value(listEngineQueryBuilder.createGetByKeyQueryBuilder(dao, key).unique());
+                V v = (V) listEngineDataAdapter.getById(key);
+                inMemoryMap.put(key, v);
+                valueCallback.value(v);
             }
-        }, 0);
+        });
     }
 
     public synchronized V getValueFromMemoryList(int index) {

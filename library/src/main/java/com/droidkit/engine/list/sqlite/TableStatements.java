@@ -10,6 +10,7 @@ public class TableStatements {
     private final String tablename;
     private final String[] allColumns;
     private final String[] idColumns;
+    private final String id;
     private final String listEngineId;
     private final String sortKey;
 
@@ -20,13 +21,16 @@ public class TableStatements {
 
     private String nextSliceStatementAsc;
     private String nextSliceStatementDesc;
+    private String getByIdStatement;
+    private String allStatement;
 
     public TableStatements(SQLiteDatabase db, String tablename, String[] allColumns,
-                           String[] idColumns, String listEngineId, String sortKey) {
+                           String[] idColumns, String id, String listEngineId, String sortKey) {
         this.db = db;
         this.tablename = tablename;
         this.allColumns = allColumns;
         this.idColumns = idColumns;
+        this.id = id;
         this.listEngineId = listEngineId;
         this.sortKey = sortKey;
     }
@@ -85,6 +89,29 @@ public class TableStatements {
             }
         }
         return statement;
+    }
+
+    public String getGetByIdStatement() {
+        if(getByIdStatement == null) {
+            StringBuilder sql = new StringBuilder("SELECT * FROM ");
+            sql.append(tablename);
+            sql.append(" WHERE ");
+            sql.append(listEngineId).append("=? AND ");
+            sql.append(id).append("=? ");
+            getByIdStatement = sql.toString();
+        }
+        return getByIdStatement;
+    }
+
+    public String getAllStatement() {
+        if(allStatement == null) {
+            StringBuilder sql = new StringBuilder("SELECT * FROM ");
+            sql.append(tablename);
+            sql.append(" WHERE ");
+            sql.append(listEngineId).append("=?");
+            allStatement = sql.toString();
+        }
+        return allStatement;
     }
 }
 

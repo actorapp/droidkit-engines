@@ -68,7 +68,12 @@ public class FewListsSingleTableDataAdapter<V> implements ListEngineDataAdapter 
     }
 
     @Override
+    public ArrayList loadAll() {
+        return dao.getAll();
+    }
+
+    @Override
     public V getById(long id) {
-        return null;
+        return (V) dao.getById(id);
     }
 }

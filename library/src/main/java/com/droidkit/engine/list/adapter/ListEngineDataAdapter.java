@@ -20,5 +20,7 @@ public interface ListEngineDataAdapter<V>  {
 
     ArrayList<V> loadListSlice(int limit, int offset);
 
+    ArrayList<V> loadAll();
+
     V getById(long id);
 }

@@ -38,7 +38,7 @@ public class ListEngineItemDao<V> {
     private TableStatements statements;
 
     public ListEngineItemDao(String listEngineName,
-                             long listEngineId, 
+                             long listEngineId,
                              SQLiteDatabase db,
                              boolean ascSorting,
                              ListEngineItemSerializator<V> listEngineItemSerializator) {
@@ -53,15 +53,17 @@ public class ListEngineItemDao<V> {
                         COLUMN_LIST_ID,
                         COLUMN_ID
                 },
+                COLUMN_ID,
                 COLUMN_LIST_ID,
-                COLUMN_SORT_KEY);
+                COLUMN_SORT_KEY
+        );
         createTable();
     }
 
     private boolean isTableExists() {
         Cursor cursor = db.rawQuery("select DISTINCT tbl_name from sqlite_master where tbl_name = '" + tableName + "'", null);
-        if(cursor!=null) {
-            if(cursor.getCount()>0) {
+        if (cursor != null) {
+            if (cursor.getCount() > 0) {
                 cursor.close();
                 return true;
             }
@@ -70,15 +72,19 @@ public class ListEngineItemDao<V> {
         return false;
     }
 
-    /** Creates the underlying database table. */
+    /**
+     * Creates the underlying database table.
+     */
     public void createTable() {
-        if(!isTableExists()) {
+        if (!isTableExists()) {
             String constraint = "IF NOT EXISTS ";
             db.execSQL("CREATE TABLE " + constraint + "'" + tableName + "' (" + //
-                    "'LIST_ID' INTEGER," + // 0: listId
-                    "'ID' INTEGER," + // 1: id
-                    "'SORT_KEY' INTEGER," + // 2: sortKey
-                    "'BYTES' BLOB);"); // 3: bytes
+                            "'LIST_ID' INTEGER NOT NULL," + // 0: listId
+                            "'ID' INTEGER NOT NULL," + // 1: id
+                            "'SORT_KEY' INTEGER NOT NULL," + // 2: sortKey
+                            "'BYTES' BLOB NOT NULL," + // 3: bytes
+                            "PRIMARY KEY('LIST_ID', 'ID'));"
+            );
             // Add Indexes
             db.execSQL("CREATE INDEX " + constraint + "IDX_LIST_ENGINE_ITEM_LIST_ID_SORT_KEY ON " + tableName +
                     " (LIST_ID, SORT_KEY);");
@@ -87,7 +93,9 @@ public class ListEngineItemDao<V> {
         }
     }
 
-    /** Drops the underlying database table. */
+    /**
+     * Drops the underlying database table.
+     */
     public void dropTable() {
         String sql = "DROP TABLE " + "IF EXISTS " + "'" + tableName + "'";
         db.execSQL(sql);
@@ -131,7 +139,9 @@ public class ListEngineItemDao<V> {
         return rowId;
     }
 
-    /** Deletes the given entity from the database. */
+    /**
+     * Deletes the given entity from the database.
+     */
     public void delete(long id) {
         SQLiteStatement stmt = statements.getDeleteStatement();
         if (db.isDbLockedByCurrentThread()) {
@@ -174,8 +184,7 @@ public class ListEngineItemDao<V> {
      * Inserts or replaces the given entities in the database using a transaction. The given entities will become
      * tracked if the PK is set.
      *
-     * @param entities
-     *            The entities to insert.
+     * @param entities The entities to insert.
      */
     public void insertOrReplaceInTx(ArrayList<V> entities) {
         SQLiteStatement stmt = statements.getInsertOrReplaceStatement();
@@ -219,10 +228,42 @@ public class ListEngineItemDao<V> {
         final String stmt = statements.getNextSliceStatement(ascSorting);
         return loadAllAndCloseCursor(db.rawQuery(stmt,
                 new String[]{
-                String.valueOf(listEngineId),
-                String.valueOf(limit),
-                String.valueOf(offset)
-        }));
+                        String.valueOf(listEngineId),
+                        String.valueOf(limit),
+                        String.valueOf(offset)
+                }
+        ));
+    }
+
+    public ArrayList<V> getAll() {
+        final String stmt = statements.getAllStatement();
+        return loadAllAndCloseCursor(db.rawQuery(stmt,
+                new String[]{
+                        String.valueOf(listEngineId),
+                }
+        ));
+    }
+
+    public V getById(long id) {
+        final String stmt = statements.getGetByIdStatement();
+        return loadSingleAndCloseCursor(db.rawQuery(stmt,
+                new String[]{
+                        String.valueOf(listEngineId),
+                        String.valueOf(id)
+                }
+        ));
+    }
+
+    private V loadSingleAndCloseCursor(Cursor cursor) {
+        try {
+            V item = null;
+            if (cursor.moveToFirst()) {
+                item = loadCurrent(cursor);
+            }
+            return item;
+        } finally {
+            cursor.close();
+        }
     }
 
     private ArrayList<V> loadAllAndCloseCursor(Cursor cursor) {
@@ -257,7 +298,7 @@ public class ListEngineItemDao<V> {
         return list;
     }
 
-    private  V loadCurrent(Cursor cursor) {
+    private V loadCurrent(Cursor cursor) {
         V entity = readEntity(cursor);
         return entity;
     }
@@ -280,12 +321,12 @@ public class ListEngineItemDao<V> {
         if (id != null) {
             stmt.bindLong(2, id);
         }
- 
+
         Long sortKey = entity.sortKey;
         if (sortKey != null) {
             stmt.bindLong(3, sortKey);
         }
- 
+
         byte[] bytes = entity.data;
         if (bytes != null) {
             stmt.bindBlob(4, bytes);
