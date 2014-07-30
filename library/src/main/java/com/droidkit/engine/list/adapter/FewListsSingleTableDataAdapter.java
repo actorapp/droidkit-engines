@@ -2,29 +2,23 @@ package com.droidkit.engine.list.adapter;
 
 import android.database.sqlite.SQLiteDatabase;
 
-import com.droidkit.engine.list.ListEngineItemSerializator;
+import com.droidkit.engine.list.ListEngineClassConnector;
 import com.droidkit.engine.list.sqlite.ListEngineItemDao;
+import com.droidkit.engine.sqlite.BinarySerializator;
 
 import java.util.ArrayList;
 
 public class FewListsSingleTableDataAdapter<V> implements ListEngineDataAdapter {
 
-    private final String listEngineName;
-    private final long listEngineId;
-    private final SQLiteDatabase database;
-    private final boolean ascSorting;
     private final ListEngineItemDao dao;
-    private final ListEngineItemSerializator<V> listEngineItemSerializator;
 
-    public FewListsSingleTableDataAdapter(SQLiteDatabase database, long listEngineId,
-                                          String listEngineName, boolean ascSorting,
-                                          ListEngineItemSerializator<V> listEngineItemSerializator) {
-        this.database = database;
-        this.listEngineId = listEngineId;
-        this.listEngineName = listEngineName;
-        this.ascSorting = ascSorting;
-        this.listEngineItemSerializator = listEngineItemSerializator;
-        dao = new ListEngineItemDao(listEngineName, listEngineId, database, ascSorting, listEngineItemSerializator);
+    public FewListsSingleTableDataAdapter(SQLiteDatabase database,
+                                          long listEngineId,
+                                          String listEngineName,
+                                          boolean ascSorting,
+                                          BinarySerializator<V> binarySerializator,
+                                          ListEngineClassConnector<V> classConnector) {
+        dao = new ListEngineItemDao(listEngineName, listEngineId, database, ascSorting, binarySerializator, classConnector);
     }
 
     @Override

@@ -5,8 +5,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 
 import com.droidkit.core.Logger;
+import com.droidkit.engine.sqlite.SqlStatements;
 
-public class TableStatements {
+public class ListEngineTableStatements implements SqlStatements {
     private final SQLiteDatabase db;
     private final String tablename;
 
@@ -20,7 +21,7 @@ public class TableStatements {
     private String getByIdStatement;
     private String allStatement;
 
-    public TableStatements(SQLiteDatabase db, String tablename) {
+    public ListEngineTableStatements(SQLiteDatabase db, String tablename) {
         this.db = db;
         this.tablename = tablename;
     }

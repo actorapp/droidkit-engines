@@ -28,10 +28,9 @@ import com.droidkit.engine.event.NotificationCenter;
 import com.droidkit.engine.event.NotificationListener;
 import com.droidkit.engine.list.ListEngine;
 import com.droidkit.engine.list.ListEngineClassConnector;
-import com.droidkit.engine.list.ListEngineItem;
-import com.droidkit.engine.list.ListEngineItemSerializator;
 import com.droidkit.engine.list.adapter.SingleListSingleTableDataAdapter;
-import com.droidkit.sqlite.DbProvider;
+import com.droidkit.engine.sqlite.BinarySerializator;
+import com.droidkit.engine.sqlite.DbProvider;
 import com.droidkit.sample.BaseActivity;
 import com.droidkit.util.SafeRunnable;
 import com.droidkit.sample.view.BlockingListView;
@@ -104,16 +103,16 @@ public class TestListEngineActivity extends BaseActivity {
             }
         };
 
-        final ListEngineItemSerializator<DialogTest> serializator = new ListEngineItemSerializator<DialogTest>() {
+        final BinarySerializator<DialogTest> serializator = new BinarySerializator<DialogTest>() {
             @Override
-            public ListEngineItem serialize(DialogTest entity) {
-                return new ListEngineItem(entity.getId(), entity.getTime(), ((DialogTest) entity).toByteArray());
+            public byte[] serialize(DialogTest entity) {
+                return entity.toByteArray();
             }
 
             @Override
-            public DialogTest deserialize(ListEngineItem item) {
+            public DialogTest deserialize(byte[] item) {
                 try {
-                    return DialogTest.parseFrom(item.data);
+                    return DialogTest.parseFrom(item);
                 } catch (Exception e) {
                     Logger.d("tmp", "", e);
                     return null;
@@ -128,7 +127,7 @@ public class TestListEngineActivity extends BaseActivity {
                 int r = (int) (rhs.getTime() % Integer.MAX_VALUE);
                 return r - l;
             }
-        }, new SingleListSingleTableDataAdapter(DbProvider.getDatabase(this), "DIALOG", false, serializator),
+        }, new SingleListSingleTableDataAdapter(DbProvider.getDatabase(this), "DIALOG", false, serializator, classConnector),
                 serializator,
                 classConnector
         );

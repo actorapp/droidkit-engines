@@ -12,6 +12,7 @@ import com.droidkit.core.Loop;
 import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
 import com.droidkit.engine.list.adapter.ListEngineDataAdapter;
+import com.droidkit.engine.sqlite.BinarySerializator;
 import com.droidkit.util.SafeRunnable;
 import com.droidkit.util.SortedArrayList;
 
@@ -91,7 +92,7 @@ public class ListEngine<V> {
      */
     protected final InMemoryListLoop inMemoryListLoop;
 
-    protected final ListEngineItemSerializator<V> listEngineItemSerializator;
+    protected final BinarySerializator<V> binarySerializator;
 
     protected final ListEngineClassConnector<V> listEngineClassConnector;
 
@@ -103,7 +104,7 @@ public class ListEngine<V> {
     public ListEngine(final Context context,
                       final Comparator<V> comparator,
                       final ListEngineDataAdapter listEngineDataAdapter,
-                      final ListEngineItemSerializator<V> listEngineItemSerializator,
+                      final BinarySerializator<V> binarySerializator,
                       final ListEngineClassConnector<V> listEngineClassConnector) {
 
         this.uniqueId = getNextId();
@@ -116,7 +117,7 @@ public class ListEngine<V> {
 
         this.inMemoryMap = new ConcurrentHashMap<Long, V>();
         this.listEngineDataAdapter = listEngineDataAdapter;
-        this.listEngineItemSerializator = listEngineItemSerializator;
+        this.binarySerializator = binarySerializator;
         this.listEngineClassConnector = listEngineClassConnector;
         this.debugToast = Toast.makeText(context, "", Toast.LENGTH_LONG);
 

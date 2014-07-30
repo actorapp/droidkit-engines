@@ -1,4 +1,4 @@
-package com.droidkit.sqlite;
+package com.droidkit.engine.sqlite;
 
 import android.content.ContentResolver;
 import android.database.CharArrayBuffer;
