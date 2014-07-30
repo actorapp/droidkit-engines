@@ -11,7 +11,7 @@ import com.droidkit.engine.sqlite.BinarySerializator;
 import java.util.ArrayList;
 
 
-public class ListEngineItemDao<V> extends AbstractDao<V> {
+public class ListEngineDao<V> extends AbstractDao<V> {
 
     private static final String TAG = "ListEngine";
 
@@ -26,12 +26,12 @@ public class ListEngineItemDao<V> extends AbstractDao<V> {
 
     private ListEngineClassConnector<V> classConnector;
 
-    public ListEngineItemDao(String listEngineName,
-                             long listEngineId,
-                             SQLiteDatabase db,
-                             boolean ascSorting,
-                             final BinarySerializator<V> binarySerializator,
-                             final ListEngineClassConnector<V> classConnector) {
+    public ListEngineDao(String listEngineName,
+                         long listEngineId,
+                         SQLiteDatabase db,
+                         boolean ascSorting,
+                         final BinarySerializator<V> binarySerializator,
+                         final ListEngineClassConnector<V> classConnector) {
         super(TABLENAME_PREFIX + listEngineName,
                 db,
                 new ListEngineTableStatements(db, TABLENAME_PREFIX + listEngineName),
@@ -61,7 +61,35 @@ public class ListEngineItemDao<V> extends AbstractDao<V> {
     }
 
     @Override
+    protected void bindValues(SQLiteStatement stmt, V entity) {
+        stmt.clearBindings();
+
+        stmt.bindLong(1, listEngineId);
+
+        Long id = classConnector.getId(entity);
+        if (id != null) {
+            stmt.bindLong(2, id);
+        }
+
+        Long sortKey = classConnector.getSortKey(entity);
+        if (sortKey != null) {
+            stmt.bindLong(3, sortKey);
+        }
+
+        byte[] bytes = binarySerializator.serialize(entity);
+        if (bytes != null) {
+            stmt.bindBlob(4, bytes);
+        }
+    }
+
+    @Override
+    public V readEntity(Cursor cursor) {
+        return (V) binarySerializator.deserialize(cursor.isNull(3) ? null : cursor.getBlob(3));
+    }
+
+    @Override
     public void deleteByKeyInsideSynchronized(long id, SQLiteStatement stmt) {
+        stmt.clearBindings();
         stmt.bindLong(1, listEngineId);
         stmt.bindLong(2, id);
         stmt.execute();
@@ -88,11 +116,6 @@ public class ListEngineItemDao<V> extends AbstractDao<V> {
         ));
     }
 
-    @Override
-    public V readEntity(Cursor cursor) {
-        return (V) binarySerializator.deserialize(cursor.isNull(3) ? null : cursor.getBlob(3));
-    }
-
     public ArrayList<V> getNextSlice(int limit, int offset) {
         final String stmt = ((ListEngineTableStatements) statements).getNextSliceStatement(ascSorting);
         return loadAllAndCloseCursor(db.rawQuery(stmt,
@@ -102,28 +125,6 @@ public class ListEngineItemDao<V> extends AbstractDao<V> {
                         String.valueOf(offset)
                 }
         ));
-    }
-
-    @Override
-    protected void bindValues(SQLiteStatement stmt, V entity) {
-        stmt.clearBindings();
-
-        stmt.bindLong(1, listEngineId);
-
-        Long id = classConnector.getId(entity);
-        if (id != null) {
-            stmt.bindLong(2, id);
-        }
-
-        Long sortKey = classConnector.getSortKey(entity);
-        if (sortKey != null) {
-            stmt.bindLong(3, sortKey);
-        }
-
-        byte[] bytes = binarySerializator.serialize(entity);
-        if (bytes != null) {
-            stmt.bindBlob(4, bytes);
-        }
     }
 
 }
