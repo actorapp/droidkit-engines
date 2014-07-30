@@ -1,7 +1,6 @@
 package com.droidkit.sample.listenginetest;
 
 import android.content.Context;
-import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -31,9 +30,8 @@ import com.droidkit.engine.list.ListEngine;
 import com.droidkit.engine.list.ListEngineClassConnector;
 import com.droidkit.engine.list.ListEngineItem;
 import com.droidkit.engine.list.ListEngineItemSerializator;
-import com.droidkit.engine.list.ValueCallback;
 import com.droidkit.engine.list.adapter.SingleListSingleTableDataAdapter;
-import com.droidkit.engine.list.sqlite.DbProvider;
+import com.droidkit.sqlite.DbProvider;
 import com.droidkit.sample.BaseActivity;
 import com.droidkit.util.SafeRunnable;
 import com.droidkit.sample.view.BlockingListView;

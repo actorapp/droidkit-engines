@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteStatement;
 import com.droidkit.core.Logger;
 import com.droidkit.engine.list.ListEngineItem;
 import com.droidkit.engine.list.ListEngineItemSerializator;
+import com.droidkit.sqlite.FastCursor;
 
 import java.util.ArrayList;
 
@@ -47,16 +48,8 @@ public class ListEngineItemDao<V> {
         this.tableName = TABLENAME_PREFIX + listEngineName;
         this.ascSorting = ascSorting;
         this.listEngineItemSerializator = listEngineItemSerializator;
-        statements = new TableStatements(db, tableName,
-                ALL_COLUMNS,
-                new String[]{
-                        COLUMN_LIST_ID,
-                        COLUMN_ID
-                },
-                COLUMN_ID,
-                COLUMN_LIST_ID,
-                COLUMN_SORT_KEY
-        );
+        statements = new TableStatements(db, tableName);
+
         createTable();
     }
 
@@ -85,6 +78,13 @@ public class ListEngineItemDao<V> {
                             "'BYTES' BLOB NOT NULL," + // 3: bytes
                             "PRIMARY KEY('LIST_ID', 'ID'));"
             );
+
+//            db.execSQL("CREATE TABLE " + constraint + "'" + tableName + "' (" + //
+//                            "'LIST_ID' INTEGER NOT NULL," + // 0: listId
+//                            "'ID' INTEGER NOT NULL," + // 1: id
+//                            "'SORT_KEY' INTEGER NOT NULL," + // 2: sortKey
+//                            "'BYTES' BLOB NOT NULL);"  // 3: bytes"
+//            );
             // Add Indexes
             db.execSQL("CREATE INDEX " + constraint + "IDX_LIST_ENGINE_ITEM_LIST_ID_SORT_KEY ON " + tableName +
                     " (LIST_ID, SORT_KEY);");
