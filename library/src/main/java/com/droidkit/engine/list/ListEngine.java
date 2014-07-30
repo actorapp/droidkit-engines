@@ -14,7 +14,6 @@ import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
 import com.droidkit.engine.list.adapter.ListEngineDataAdapter;
 import com.droidkit.engine.sqlite.BinarySerializator;
-import com.droidkit.util.SafeRunnable;
 import com.droidkit.util.SortedArrayList;
 
 import java.util.ArrayList;
@@ -181,9 +180,9 @@ public class ListEngine<V> {
 
             inMemoryMap.put(id, originalValue);
 
-            loop.postRunnable(new SafeRunnable() {
+            loop.postRunnable(new Runnable() {
                 @Override
-                public void runSafely() {
+                public void run() {
                     final long dbStart = SystemClock.uptimeMillis();
                     if (isUpdateOnly || isAddOrUpdate) {
                         listEngineDataAdapter.insertOrReplaceSingle(originalValue);
@@ -239,9 +238,9 @@ public class ListEngine<V> {
             }
         });
 
-        loop.postRunnable(new SafeRunnable() {
+        loop.postRunnable(new Runnable() {
             @Override
-            public void runSafely() {
+            public void run() {
                 final long dbStart = SystemClock.uptimeMillis();
                 if (isUpdateOnly || isAddOrUpdate) {
                     listEngineDataAdapter.insertOrReplaceBatch(values);
@@ -266,9 +265,9 @@ public class ListEngine<V> {
             });
         }
 
-        loop.postRunnable(new SafeRunnable() {
+        loop.postRunnable(new Runnable() {
             @Override
-            public void runSafely() {
+            public void run() {
                 listEngineDataAdapter.deleteSingle(key);
             }
         }, 0);
@@ -373,9 +372,9 @@ public class ListEngine<V> {
     }
 
     public synchronized void getValueFromDb(final long key, final ValueCallback<V> valueCallback) {
-        loop.postRunnable(new SafeRunnable() {
+        loop.postRunnable(new Runnable() {
             @Override
-            public void runSafely() {
+            public void run() {
                 V v = (V) listEngineDataAdapter.getById(key);
                 inMemoryMap.put(key, v);
                 valueCallback.value(v);
@@ -401,9 +400,9 @@ public class ListEngine<V> {
         });
 
         inMemoryMap.clear();
-        loop.postRunnable(new SafeRunnable() {
+        loop.postRunnable(new Runnable() {
             @Override
-            public void runSafely() {
+            public void run() {
                 final long dbStart = SystemClock.uptimeMillis();
                 listEngineDataAdapter.deleteAll();
                 currentDbOffset = 0;
@@ -416,9 +415,9 @@ public class ListEngine<V> {
 
     private void showDebugToast(final String text) {
         if (ENABLE_TOAST_LOG) {
-            HANDLER.post(new SafeRunnable() {
+            HANDLER.post(new Runnable() {
                 @Override
-                public void runSafely() {
+                public void run() {
                     debugToast.setText(text);
                     debugToast.show();
                 }
@@ -474,9 +473,9 @@ public class ListEngine<V> {
 
                 modification.modify(beginInactiveList);
 
-                HANDLER.postDelayed(new SafeRunnable() {
+                HANDLER.postDelayed(new Runnable() {
                     @Override
-                    public void runSafely() {
+                    public void run() {
                         synchronized (inMemoryListSync) {
                             switchActiveList();
                             Logger.d(TAG, "inMemorySortedList1.size():" + inMemorySortedList1.size() + ", inMemorySortedList2.size():" + inMemorySortedList2.size());
@@ -499,9 +498,9 @@ public class ListEngine<V> {
                     //SOMETHING WENT WRONG!
                     Logger.e(TAG, "Error in memories list sync");
                     Logger.e(TAG, "inMemorySortedList1.size():" + inMemorySortedList1.size() + ", inMemorySortedList2.size():" + inMemorySortedList2.size());
-                    HANDLER.postDelayed(new SafeRunnable() {
+                    HANDLER.postDelayed(new Runnable() {
                         @Override
-                        public void runSafely() {
+                        public void run() {
                             synchronized (inMemoryListSync) {
                                 modification.modify(getActiveList());
                                 NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, uniqueId);

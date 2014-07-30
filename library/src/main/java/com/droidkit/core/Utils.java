@@ -5,8 +5,6 @@ import android.content.Context;
 import android.os.Looper;
 import android.widget.Toast;
 
-import com.droidkit.util.SafeRunnable;
-
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,9 +19,9 @@ public class Utils {
 
     public static void showToast(final Activity context, final String text) {
         if(context != null) {
-            context.runOnUiThread(new SafeRunnable() {
+            context.runOnUiThread(new Runnable() {
                 @Override
-                public void runSafely() {
+                public void run() {
                     Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
                 }
             });

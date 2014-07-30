@@ -7,7 +7,6 @@ import android.os.Looper;
 import com.droidkit.core.Logger;
 import com.droidkit.core.Loop;
 import com.droidkit.core.Utils;
-import com.droidkit.util.SafeRunnable;
 import com.droidkit.util.WeakEqualReference;
 
 import java.util.Collections;
@@ -163,9 +162,9 @@ public class NotificationCenter {
                             listenerContainer.listener.onNotification(eventType, eventId, args);
                             continue;
                         }
-                        final SafeRunnable fireEvent = new SafeRunnable() {
+                        final Runnable fireEvent = new Runnable() {
                             @Override
-                            public void runSafely() {
+                            public void run() {
                                 synchronized (fireRemoveSyncObject) {
                                     //double-check here
                                     if(!listenerContainer.isDeleted()) {

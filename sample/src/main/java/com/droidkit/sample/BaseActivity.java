@@ -8,7 +8,6 @@ import android.support.v7.app.ActionBarActivity;
 import android.text.TextUtils;
 
 import com.droidkit.core.Logger;
-import com.droidkit.util.SafeRunnable;
 
 
 public class BaseActivity extends ActionBarActivity {
@@ -27,9 +26,9 @@ public class BaseActivity extends ActionBarActivity {
     }
 
     public void showProgressDialog(final String title, final String text) {
-        runOnUiThread(new SafeRunnable() {
+        runOnUiThread(new Runnable() {
             @Override
-            public void runSafely() {
+            public void run() {
                 synchronized (progressDialogSync) {
                     if(progressDialog == null) {
                         progressDialog = new ProgressDialog(BaseActivity.this);
@@ -54,9 +53,9 @@ public class BaseActivity extends ActionBarActivity {
     }
 
     public void hideProgressDialog() {
-        runOnUiThread(new SafeRunnable() {
+        runOnUiThread(new Runnable() {
             @Override
-            public void runSafely() {
+            public void run() {
                 if(progressDialog != null && progressDialog.isShowing()) {
                     try {
                         progressDialog.dismiss();

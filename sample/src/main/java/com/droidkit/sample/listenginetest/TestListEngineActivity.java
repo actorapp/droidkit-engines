@@ -32,7 +32,6 @@ import com.droidkit.engine.list.adapter.SingleListSingleTableDataAdapter;
 import com.droidkit.engine.sqlite.BinarySerializator;
 import com.droidkit.engine.sqlite.DbProvider;
 import com.droidkit.sample.BaseActivity;
-import com.droidkit.util.SafeRunnable;
 import com.droidkit.sample.view.BlockingListView;
 
 import java.text.SimpleDateFormat;
@@ -74,9 +73,9 @@ public class TestListEngineActivity extends BaseActivity {
                 if (isFirstLoad) {
                     isFirstLoad = false;
                     final long stop = SystemClock.uptimeMillis();
-                    handler.postDelayed(new SafeRunnable() {
+                    handler.postDelayed(new Runnable() {
                         @Override
-                        public void runSafely() {
+                        public void run() {
                             Utils.showToast(TestListEngineActivity.this, "First data loaded in " + (stop - start) + "ms");
                         }
                     }, 3000);
