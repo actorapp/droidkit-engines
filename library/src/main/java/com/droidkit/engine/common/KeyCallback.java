@@ -1,4 +1,4 @@
-package com.droidkit.engine.list;
+package com.droidkit.engine.common;
 
 /**
  * Created by eavsievich on 02/07/14.

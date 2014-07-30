@@ -28,7 +28,7 @@ public class ListEngineTableStatements implements SqlStatements {
 
     public SQLiteStatement getInsertStatement() {
         if (insertStatement == null) {
-            String sql = String.format("INSERT INTO %s ('LIST_ID','ID','SORT_KEY','BYTES') VALUES (?,?,?,?)", tablename);
+            String sql = String.format("INSERT INTO %s (LIST_ID,ID,SORT_KEY,BYTES) VALUES (?,?,?,?)", tablename);
             insertStatement = db.compileStatement(sql);
         }
         return insertStatement;
@@ -36,7 +36,7 @@ public class ListEngineTableStatements implements SqlStatements {
 
     public SQLiteStatement getInsertOrReplaceStatement() {
         if (insertOrReplaceStatement == null) {
-            String sql = String.format("INSERT OR REPLACE INTO %s ('LIST_ID','ID','SORT_KEY','BYTES') VALUES (?,?,?,?)", tablename);
+            String sql = String.format("INSERT OR REPLACE INTO %s (LIST_ID,ID,SORT_KEY,BYTES) VALUES (?,?,?,?)", tablename);
             insertOrReplaceStatement = db.compileStatement(sql);
         }
         return insertOrReplaceStatement;
@@ -44,7 +44,7 @@ public class ListEngineTableStatements implements SqlStatements {
 
     public SQLiteStatement getDeleteStatement() {
         if (deleteStatement == null) {
-            String sql = String.format("DELETE FROM %s WHERE %s.'LIST_ID'=? AND %s.'ID'=?", tablename, tablename, tablename);
+            String sql = String.format("DELETE FROM %s WHERE %s.LIST_ID=? AND %s.ID=?", tablename, tablename, tablename);
             deleteStatement = db.compileStatement(sql);
         }
         return deleteStatement;

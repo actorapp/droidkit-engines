@@ -179,6 +179,7 @@ public abstract class AbstractDao<V> {
     }
 
     protected V loadSingleAndCloseCursor(Cursor cursor) {
+        Logger.d("tmp", "Result size " + cursor.getCount());
         try {
             V item = null;
             if (cursor.moveToFirst()) {
@@ -203,7 +204,7 @@ public abstract class AbstractDao<V> {
         ArrayList<V> list = new ArrayList<V>(count);
         if (cursor instanceof CrossProcessCursor) {
             CursorWindow window = ((CrossProcessCursor) cursor).getWindow();
-            if (window != null) { // E.g. Roboelectric has no Window at this point
+            if (window != null) {
                 if (window.getNumRows() == count) {
                     cursor = new FastCursor(window);
                 } else {

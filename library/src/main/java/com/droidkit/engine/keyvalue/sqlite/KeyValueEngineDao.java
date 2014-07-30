@@ -4,6 +4,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 
+import com.droidkit.core.Logger;
 import com.droidkit.engine.keyvalue.KeyValueEngineClassConnector;
 import com.droidkit.engine.sqlite.AbstractDao;
 import com.droidkit.engine.sqlite.BinarySerializator;
@@ -15,7 +16,7 @@ public class KeyValueEngineDao<V> extends AbstractDao<V> {
 
     private final KeyValueEngineClassConnector<V> classConnector;
 
-    protected KeyValueEngineDao(String keyValueEngineName,
+    public KeyValueEngineDao(String keyValueEngineName,
                                 SQLiteDatabase db,
                                 BinarySerializator<V> serializator,
                                 KeyValueEngineClassConnector<V> classConnector) {
@@ -70,6 +71,7 @@ public class KeyValueEngineDao<V> extends AbstractDao<V> {
     @Override
     public V getById(long id) {
         final String stmt = statements.getGetByIdStatement();
+
         return loadSingleAndCloseCursor(db.rawQuery(stmt,
                 new String[]{
                         String.valueOf(id)
