@@ -5,6 +5,7 @@ import android.os.Looper;
 import android.support.v4.util.LruCache;
 
 import com.droidkit.core.Loop;
+import com.droidkit.core.Utils;
 import com.droidkit.engine.common.ValueCallback;
 import com.droidkit.engine.common.ValuesCallback;
 import com.droidkit.engine.event.Events;
@@ -95,6 +96,18 @@ public class KeyValueEngine<V> {
 
     public V getFromMemory(final long id) {
         return inMemoryLruCache.get(id);
+    }
+
+    public V getFromDiskSync(final long id) {
+        if(Utils.isUIThread()) {
+            throw new RuntimeException("getFromDiskSync should be called only from background threads");
+        }
+
+        V value = keyValueEngineDataAdapter.getById(id);
+        if(value != null) {
+            inMemoryLruCache.put(id, value);
+        }
+        return value;
     }
 
     public void getFromDisk(final long id, final ValueCallback<V> callback) {
