@@ -50,7 +50,7 @@ public class KeyValueEngine<V> {
      */
     protected final int uniqueId;
 
-    private final LruCache<Long, V> inMemoryLruCache;
+    private LruCache<Long, V> inMemoryLruCache;
 
     private final KeyValueEngineDataAdapter<V> keyValueEngineDataAdapter;
 
@@ -81,6 +81,12 @@ public class KeyValueEngine<V> {
         });
     }
 
+    public void putSync(final V value) {
+        inMemoryLruCache.put(keyValueEngineClassConnector.getId(value), value);
+        keyValueEngineDataAdapter.insertOrReplaceSingle(value);
+        NotificationCenter.getInstance().fireEvent(Events.KEY_VALUE_UPDATE, uniqueId);
+    }
+
     public void putAll(final ArrayList<V> values) {
         for(V v : values) {
             inMemoryLruCache.put(keyValueEngineClassConnector.getId(v), v);
@@ -92,6 +98,14 @@ public class KeyValueEngine<V> {
                 NotificationCenter.getInstance().fireEvent(Events.KEY_VALUE_UPDATE, uniqueId);
             }
         });
+    }
+
+    public void putAllSync(final ArrayList<V> values) {
+        for(V v : values) {
+            inMemoryLruCache.put(keyValueEngineClassConnector.getId(v), v);
+        }
+        keyValueEngineDataAdapter.insertOrReplaceBatch(values);
+        NotificationCenter.getInstance().fireEvent(Events.KEY_VALUE_UPDATE, uniqueId);
     }
 
     public V getFromMemory(final long id) {
@@ -114,11 +128,7 @@ public class KeyValueEngine<V> {
         loop.postRunnable(new Runnable() {
             @Override
             public void run() {
-                V value = keyValueEngineDataAdapter.getById(id);
-                if(value != null) {
-                    inMemoryLruCache.put(id, value);
-                }
-                callback.value(value);
+                callback.value(getFromDiskSync(id));
             }
         });
     }
@@ -127,8 +137,21 @@ public class KeyValueEngine<V> {
         loop.postRunnable(new Runnable() {
             @Override
             public void run() {
-                ArrayList<V> list = keyValueEngineDataAdapter.loadAll();
-                callback.values(list);
+                callback.values(getAllFromDiskSync());
+            }
+        });
+    }
+
+    public ArrayList<V> getAllFromDiskSync() {
+        return keyValueEngineDataAdapter.loadAll();
+    }
+
+    public void clear() {
+        inMemoryLruCache.evictAll();
+        loop.postRunnable(new Runnable() {
+            @Override
+            public void run() {
+                keyValueEngineDataAdapter.deleteAll();
             }
         });
     }
