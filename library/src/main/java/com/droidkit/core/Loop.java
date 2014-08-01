@@ -14,7 +14,7 @@ public class Loop extends Thread {
         handlerSyncObject = new Object();
     }
 
-    private void initializeHandler() {
+    protected void initializeHandler() {
         if (handler == null) {
             try {
                 synchronized (handlerSyncObject) {
