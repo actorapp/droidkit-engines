@@ -53,9 +53,9 @@ public class ListEngineDao<V> extends AbstractDao<V> {
                             "PRIMARY KEY('LIST_ID', 'ID'));"
             );
 
-            db.execSQL("CREATE INDEX " + constraint + "IDX_LIST_ENGINE_ITEM_LIST_ID_SORT_KEY ON " + tableName +
+            db.execSQL("CREATE INDEX " + constraint + "IDX_LIST_ENGINE_ITEM_LIST_ID_SORT_KEY ON '" + tableName + "'" +
                     " (LIST_ID, SORT_KEY);");
-            db.execSQL("CREATE INDEX " + constraint + "IDX_LIST_ENGINE_ITEM_ID ON " + tableName +
+            db.execSQL("CREATE INDEX " + constraint + "IDX_LIST_ENGINE_ITEM_ID ON '" + tableName + "'" +
                     " (ID);");
         }
     }

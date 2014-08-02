@@ -119,7 +119,7 @@ public class TestListEngineActivity extends BaseActivity {
             }
         };
 
-        listEngine = new ListEngine<DialogTest>(TestListEngineActivity.this, new Comparator<DialogTest>() {
+        listEngine = new ListEngine<DialogTest>(TestListEngineActivity.this, 0, new Comparator<DialogTest>() {
             @Override
             public int compare(DialogTest lhs, DialogTest rhs) {
                 int l = (int) (lhs.getTime() % Integer.MAX_VALUE);
@@ -133,7 +133,7 @@ public class TestListEngineActivity extends BaseActivity {
         count = 0;
         adapter = new ExampleAdapter();
         lv.setAdapter(adapter);
-        NotificationCenter.getInstance().addListener(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngine.getUniqueId(), diskLoadListener);
+        NotificationCenter.getInstance().addListener(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngine.getListEngineId(), diskLoadListener);
         listEngine.loadNextListSlice(PAGE_SIZE);
 
 

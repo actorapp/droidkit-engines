@@ -25,7 +25,7 @@ public class KeyValueEngineTableStatements implements SqlStatements {
 
     public SQLiteStatement getInsertStatement() {
         if (insertStatement == null) {
-            String sql = String.format("INSERT INTO %s (ID,BYTES) VALUES (?,?)", tablename);
+            String sql = String.format("INSERT INTO '%s' (ID,BYTES) VALUES (?,?)", tablename);
             insertStatement = db.compileStatement(sql);
         }
         return insertStatement;
@@ -33,7 +33,7 @@ public class KeyValueEngineTableStatements implements SqlStatements {
 
     public SQLiteStatement getInsertOrReplaceStatement() {
         if (insertOrReplaceStatement == null) {
-            String sql = String.format("INSERT OR REPLACE INTO %s (ID,BYTES) VALUES (?,?)", tablename);
+            String sql = String.format("INSERT OR REPLACE INTO '%s' (ID,BYTES) VALUES (?,?)", tablename);
             insertOrReplaceStatement = db.compileStatement(sql);
         }
         return insertOrReplaceStatement;
@@ -41,7 +41,7 @@ public class KeyValueEngineTableStatements implements SqlStatements {
 
     public SQLiteStatement getDeleteStatement() {
         if (deleteStatement == null) {
-            String sql = String.format("DELETE FROM %s WHERE ID=?", tablename, tablename);
+            String sql = String.format("DELETE FROM '%s' WHERE ID=?", tablename, tablename);
             deleteStatement = db.compileStatement(sql);
         }
         return deleteStatement;
@@ -49,14 +49,14 @@ public class KeyValueEngineTableStatements implements SqlStatements {
 
     public String getGetByIdStatement() {
         if(getByIdStatement == null) {
-            getByIdStatement = String.format("SELECT * FROM %s WHERE ID=?", tablename);
+            getByIdStatement = String.format("SELECT * FROM '%s' WHERE ID=?", tablename);
         }
         return getByIdStatement;
     }
 
     public String getAllStatement() {
         if(allStatement == null) {
-            allStatement = String.format("SELECT * FROM %s", tablename);
+            allStatement = String.format("SELECT * FROM '%s'", tablename);
         }
         return allStatement;
     }
