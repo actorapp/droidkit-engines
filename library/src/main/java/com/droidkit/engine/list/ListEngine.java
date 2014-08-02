@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ListEngine<V> {
 
-    private static final boolean ENABLE_TOAST_LOG = true;
+    private static final boolean ENABLE_TOAST_LOG = false;
 
     private static final String TAG = "ListEngine";
 
@@ -120,7 +120,7 @@ public class ListEngine<V> {
         this.inMemoryListLoop.setPriority(Thread.MIN_PRIORITY);
         this.inMemoryListLoop.start();
 
-        this.isInForeground = new AtomicBoolean();
+        this.isInForeground = new AtomicBoolean(false);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,7 +175,7 @@ public class ListEngine<V> {
                     }
                     list.add(value);
                 }
-            });
+            }, 1);
 
             inMemoryMap.put(id, value);
 
@@ -236,7 +236,7 @@ public class ListEngine<V> {
                 list.removeAll(toRemove);
                 list.addAll(values);
             }
-        });
+        }, values.size());
 
         loop.postRunnable(new Runnable() {
             @Override
@@ -262,7 +262,7 @@ public class ListEngine<V> {
                 public void modify(SortedArrayList<V> list) {
                     list.remove(val);
                 }
-            });
+            }, -1);
         }
 
         loop.postRunnable(new Runnable() {
@@ -302,7 +302,7 @@ public class ListEngine<V> {
                                 public void modify(SortedArrayList<V> targetList) {
                                     targetList.addAll(list);
                                 }
-                            });
+                            }, list.size());
 
                             for (V val : list) {
                                 inMemoryMap.put(listEngineClassConnector.getId(val), val);
@@ -344,7 +344,7 @@ public class ListEngine<V> {
                                     targetList.clear();
                                     targetList.addAll(list);
                                 }
-                            });
+                            }, list.size());
 
                             for (V val : list) {
                                 inMemoryMap.put(listEngineClassConnector.getId(val), val);
@@ -410,10 +410,14 @@ public class ListEngine<V> {
             @Override
             public void modify(SortedArrayList<V> list) {
                 list.clear();
+                lastSliceSize = 1;
+                currentDbOffset = 0;
             }
-        });
+        }, -getActiveList().size());
 
         inMemoryMap.clear();
+        lastSliceSize = 1;
+        currentDbOffset = 0;
     }
 
     public synchronized void switchToForeground() {
@@ -464,9 +468,9 @@ public class ListEngine<V> {
         }
     }
 
-    private synchronized void modifyInMemoryList(InMemoryListModification<V> modification) {
+    private synchronized void modifyInMemoryList(InMemoryListModification<V> modification, int changeSize) {
         if(isInForeground.get()) {
-            inMemoryListLoop.postMessage(Message.obtain(inMemoryListLoop.handler, 0, modification), 0);
+            inMemoryListLoop.postMessage(Message.obtain(inMemoryListLoop.handler, changeSize, modification), 0);
         }
     }
 
@@ -494,7 +498,7 @@ public class ListEngine<V> {
                         synchronized (inMemoryListSync) {
                             switchActiveList();
                             Logger.d(TAG, "inMemorySortedList1.size():" + inMemorySortedList1.size() + ", inMemorySortedList2.size():" + inMemorySortedList2.size());
-                            NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId);
+                            NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[] {msg.what});
                             inMemoryListSync.notifyAll();
                         }
                     }
@@ -518,7 +522,7 @@ public class ListEngine<V> {
                         public void run() {
                             synchronized (inMemoryListSync) {
                                 modification.modify(getActiveList());
-                                NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId);
+                                NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[] {msg.what});
                                 inMemoryListSync.notifyAll();
                             }
                         }
