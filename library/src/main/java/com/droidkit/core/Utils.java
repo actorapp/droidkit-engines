@@ -2,6 +2,7 @@ package com.droidkit.core;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Handler;
 import android.os.Looper;
 import android.widget.Toast;
 
@@ -11,15 +12,17 @@ import java.util.regex.Pattern;
 
 public class Utils {
 
+    public static final Handler handler = new Handler(Looper.getMainLooper());
+
     public static final Random random = new Random();
 
     public static boolean isUIThread() {
         return Looper.getMainLooper().getThread() == Thread.currentThread();
     }
 
-    public static void showToast(final Activity context, final String text) {
+    public static void showToast(final Context context, final String text) {
         if(context != null) {
-            context.runOnUiThread(new Runnable() {
+            handler.post(new Runnable() {
                 @Override
                 public void run() {
                     Toast.makeText(context, text, Toast.LENGTH_SHORT).show();
