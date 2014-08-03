@@ -9,6 +9,7 @@ import android.widget.Toast;
 
 import com.droidkit.core.Logger;
 import com.droidkit.core.Loop;
+import com.droidkit.core.Utils;
 import com.droidkit.engine.common.ValueCallback;
 import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
@@ -405,19 +406,27 @@ public class ListEngine<V> {
         }, 0);
     }
 
-    public synchronized void clearInMemory() {
-        modifyInMemoryList(new InMemoryListModification<V>() {
-            @Override
-            public void modify(SortedArrayList<V> list) {
-                list.clear();
-                lastSliceSize = 1;
-                currentDbOffset = 0;
-            }
-        }, -getActiveList().size());
-
+    public synchronized void clearMemoryInternal() {
+        final int changeSize = inMemorySortedList1.size();
+        inMemorySortedList1.clear();
+        inMemorySortedList2.clear();
         inMemoryMap.clear();
         lastSliceSize = 1;
         currentDbOffset = 0;
+        NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[] {changeSize});
+    }
+
+    private synchronized void clearInMemory() {
+        if(Utils.isUIThread()) {
+            clearMemoryInternal();
+        } else {
+            HANDLER.post(new Runnable() {
+                @Override
+                public void run() {
+                    clearMemoryInternal();
+                }
+            });
+        }
     }
 
     public synchronized void switchToForeground() {
