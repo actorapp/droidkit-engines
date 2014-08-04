@@ -179,7 +179,6 @@ public abstract class AbstractDao<V> {
     }
 
     protected V loadSingleAndCloseCursor(Cursor cursor) {
-        Logger.d("tmp", "Result size " + cursor.getCount());
         try {
             V item = null;
             if (cursor.moveToFirst()) {
