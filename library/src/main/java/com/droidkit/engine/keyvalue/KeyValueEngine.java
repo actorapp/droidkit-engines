@@ -124,6 +124,14 @@ public class KeyValueEngine<V> {
         return value;
     }
 
+    public V getSync(final long id) {
+        V value = getFromMemory(id);
+        if(value == null) {
+            value = getFromDiskSync(id);
+        }
+        return value;
+    }
+
     public void getFromDisk(final long id, final ValueCallback<V> callback) {
         loop.postRunnable(new Runnable() {
             @Override
@@ -154,6 +162,26 @@ public class KeyValueEngine<V> {
                 keyValueEngineDataAdapter.deleteAll();
             }
         });
+    }
+
+    public void clearSync() {
+        inMemoryLruCache.evictAll();
+        keyValueEngineDataAdapter.deleteAll();
+    }
+
+    public void remove(final long id) {
+        inMemoryLruCache.remove(id);
+        loop.postRunnable(new Runnable() {
+            @Override
+            public void run() {
+                keyValueEngineDataAdapter.deleteSingle(id);
+            }
+        });
+    }
+
+    public void removeSync(final long id) {
+        inMemoryLruCache.remove(id);
+        keyValueEngineDataAdapter.deleteSingle(id);
     }
 
     public int getUniqueId() {
