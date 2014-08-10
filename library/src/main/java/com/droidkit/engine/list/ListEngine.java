@@ -19,6 +19,7 @@ import com.droidkit.util.SortedArrayList;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -38,6 +39,13 @@ public class ListEngine<V> {
             LOOPS[i].setPriority(Thread.MIN_PRIORITY);
             LOOPS[i].start();
         }
+    }
+
+    private static volatile int lastId = 0;
+
+    private static synchronized int getNextId() {
+        lastId++;
+        return lastId;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -97,13 +105,12 @@ public class ListEngine<V> {
      * @param listEngineQueryBuilder
      */
     public ListEngine(final Context context,
-                      final int listEngineId,
                       final Comparator<V> comparator,
                       final ListEngineDataAdapter listEngineDataAdapter,
                       final BinarySerializator<V> binarySerializator,
                       final ListEngineClassConnector<V> listEngineClassConnector) {
 
-        this.listEngineId = listEngineId;
+        this.listEngineId = getNextId();
 
         this.loop = LOOPS[Math.abs(this.listEngineId) % LOOPS_COUNT];
 
@@ -165,38 +172,38 @@ public class ListEngine<V> {
 
         final long id = listEngineClassConnector.getId(value);
 
-        final V originalValue = inMemoryMap.get(id);
-
-        if ((originalValue != null && isUpdateOnly) || isAddOnly || isAddOrUpdate) {
-            modifyInMemoryList(new InMemoryListModification<V>() {
-                @Override
-                public void modify(SortedArrayList<V> list) {
-                    if (originalValue != null && isAddOrUpdate || isUpdateOnly) {
-                        list.remove(originalValue);
+        modifyInMemoryList(new InMemoryListModification<V>() {
+            @Override
+            public void modify(SortedArrayList<V> list) {
+                if (isAddOrUpdate || isUpdateOnly) {
+                    Iterator<V> it = list.iterator();
+                    while (it.hasNext()) {
+                        V value = it.next();
+                        if(listEngineClassConnector.getId(value) == id) {
+                            it.remove();
+                            break;
+                        }
                     }
-                    list.add(value);
                 }
-            }, 1);
+                list.add(value);
+            }
+        }, 1);
 
-            inMemoryMap.put(id, value);
+        inMemoryMap.put(id, value);
 
-            loop.postRunnable(new Runnable() {
-                @Override
-                public void run() {
-                    final long dbStart = SystemClock.uptimeMillis();
-                    if (isUpdateOnly || isAddOrUpdate) {
-                        listEngineDataAdapter.insertOrReplaceSingle(value);
-                    } else if (isAddOnly) {
-                        listEngineDataAdapter.insertSingle(value);
-                    }
-
-
-//                    showDebugToast("addOrUpdateItem DB: " + (SystemClock.uptimeMillis() - dbStart) + "ms");
-
-                    Logger.d(TAG, "DB addOrUpdateItems in " + (SystemClock.uptimeMillis() - dbStart) + "ms");
+        loop.postRunnable(new Runnable() {
+            @Override
+            public void run() {
+                final long dbStart = SystemClock.uptimeMillis();
+                if (isUpdateOnly || isAddOrUpdate) {
+                    listEngineDataAdapter.insertOrReplaceSingle(value);
+                } else if (isAddOnly) {
+                    listEngineDataAdapter.insertSingle(value);
                 }
-            }, 0);
-        }
+
+                Logger.d(TAG, "DB addOrUpdateItems in " + (SystemClock.uptimeMillis() - dbStart) + "ms");
+            }
+        }, 0);
     }
 
     public synchronized void addItems(final ArrayList<V> values) {
@@ -261,7 +268,14 @@ public class ListEngine<V> {
             modifyInMemoryList(new InMemoryListModification<V>() {
                 @Override
                 public void modify(SortedArrayList<V> list) {
-                    list.remove(val);
+                    Iterator<V> it = list.iterator();
+                    while (it.hasNext()) {
+                        V value = it.next();
+                        if(listEngineClassConnector.getId(value) == key) {
+                            it.remove();
+                            break;
+                        }
+                    }
                 }
             }, -1);
         }
@@ -274,7 +288,7 @@ public class ListEngine<V> {
         }, 0);
     }
 
-    public synchronized int inMemoryListSize() {
+    public synchronized int getCountInMemoryList() {
         return getActiveList().size();
     }
 
@@ -413,7 +427,7 @@ public class ListEngine<V> {
         inMemoryMap.clear();
         lastSliceSize = 1;
         currentDbOffset = 0;
-        NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[] {changeSize});
+        NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[]{changeSize});
     }
 
     private synchronized void clearInMemory() {

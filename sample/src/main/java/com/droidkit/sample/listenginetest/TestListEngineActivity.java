@@ -261,7 +261,7 @@ public class TestListEngineActivity extends BaseActivity {
 
         @Override
         public int getCount() {
-            return listEngine.inMemoryListSize();
+            return listEngine.getCountInMemoryList();
         }
 
         @Override
