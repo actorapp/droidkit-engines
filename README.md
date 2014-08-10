@@ -1,4 +1,1 @@
-droidkit
-========
-
 DroidKit - Android Toolkit
