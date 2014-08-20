@@ -127,13 +127,9 @@ public class ListEngine<V> {
         this.inMemoryListLoop = new InMemoryListLoop();
         this.inMemoryListLoop.setPriority(Thread.MIN_PRIORITY);
         this.inMemoryListLoop.start();
-
-        this.isInForeground = new AtomicBoolean(false);
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    protected final AtomicBoolean isInForeground;
 
     protected volatile int lastSliceSize = 1;
 
@@ -443,16 +439,6 @@ public class ListEngine<V> {
         }
     }
 
-    public synchronized void switchToForeground() {
-        isInForeground.set(true);
-        clearInMemory();
-    }
-
-    public synchronized void switchToBackground() {
-        clearInMemory();
-        isInForeground.set(false);
-    }
-
     private void showDebugToast(final String text) {
         if (ENABLE_TOAST_LOG) {
             HANDLER.post(new Runnable() {
@@ -492,9 +478,7 @@ public class ListEngine<V> {
     }
 
     private synchronized void modifyInMemoryList(InMemoryListModification<V> modification, int changeSize) {
-        if(isInForeground.get()) {
-            inMemoryListLoop.postMessage(Message.obtain(inMemoryListLoop.handler, changeSize, modification), 0);
-        }
+        inMemoryListLoop.postMessage(Message.obtain(inMemoryListLoop.handler, changeSize, modification), 0);
     }
 
     private final Object inMemoryListSync = new Object();

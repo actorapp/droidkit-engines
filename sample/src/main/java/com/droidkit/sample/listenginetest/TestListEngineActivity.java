@@ -119,7 +119,7 @@ public class TestListEngineActivity extends BaseActivity {
             }
         };
 
-        listEngine = new ListEngine<DialogTest>(TestListEngineActivity.this, 0, new Comparator<DialogTest>() {
+        listEngine = new ListEngine<DialogTest>(TestListEngineActivity.this, new Comparator<DialogTest>() {
             @Override
             public int compare(DialogTest lhs, DialogTest rhs) {
                 int l = (int) (lhs.getTime() % Integer.MAX_VALUE);
@@ -194,7 +194,7 @@ public class TestListEngineActivity extends BaseActivity {
                                                 setId(count).setTime(++time).setTitle("Example Title").setText("Example Text").setStatus(1).setImageUrl("Image Url").setLastMessageSenderName("Example Name").build();
                                         tmp.add(example);
                                     }
-                                    listEngine.addItems(tmp);
+                                    listEngine.addOrUpdateItems(tmp);
                                     return null;
                                 }
                             }.execute();
@@ -208,7 +208,7 @@ public class TestListEngineActivity extends BaseActivity {
                                         final DialogTest example = DialogTest.newBuilder().
                                                 setId(count).setTime(++time).setTitle("Example Title").setText("Example Text").setStatus(1).setImageUrl("Image Url").setLastMessageSenderName("Example Name").build();
                                         try {
-                                            listEngine.addItem(example);
+                                            listEngine.addOrUpdateItem(example);
                                         } catch (Exception e) {
                                             Logger.d("tmp", "", e);
                                         }
