@@ -122,11 +122,21 @@ public class ListEngine<V> {
         this.listEngineDataAdapter = listEngineDataAdapter;
         this.binarySerializator = binarySerializator;
         this.listEngineClassConnector = listEngineClassConnector;
-        this.debugToast = Toast.makeText(context, "", Toast.LENGTH_LONG);
 
         this.inMemoryListLoop = new InMemoryListLoop();
         this.inMemoryListLoop.setPriority(Thread.MIN_PRIORITY);
         this.inMemoryListLoop.start();
+
+        if(Utils.isUIThread()) {
+            this.debugToast = Toast.makeText(context, "", Toast.LENGTH_LONG);
+        } else {
+            Utils.handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    debugToast = Toast.makeText(context, "", Toast.LENGTH_LONG);
+                }
+            });
+        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
