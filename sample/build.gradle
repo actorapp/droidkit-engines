@@ -1,4 +1,4 @@
-apply plugin: 'com.android.application'
+apply plugin: 'android'
 
 def basicVersion = '0.1'
 def customVersionCode = '10240';
