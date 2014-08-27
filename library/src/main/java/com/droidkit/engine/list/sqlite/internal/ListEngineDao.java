@@ -1,12 +1,11 @@
-package com.droidkit.engine.list.sqlite;
+package com.droidkit.engine.list.sqlite.internal;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 
-import com.droidkit.engine.list.ListEngineClassConnector;
-import com.droidkit.engine.sqlite.AbstractDao;
-import com.droidkit.engine.sqlite.BinarySerializator;
+import com.droidkit.engine.list.DataAdapter;
+import com.droidkit.engine._internal.sqlite.AbstractDao;
 
 import java.util.ArrayList;
 
@@ -24,18 +23,17 @@ public class ListEngineDao<V> extends AbstractDao<V> {
     private final long listEngineId;
     private final boolean ascSorting;
 
-    private ListEngineClassConnector<V> classConnector;
+    private DataAdapter<V> classConnector;
 
     public ListEngineDao(String listEngineName,
                          long listEngineId,
                          SQLiteDatabase db,
                          boolean ascSorting,
-                         final BinarySerializator<V> binarySerializator,
-                         final ListEngineClassConnector<V> classConnector) {
+                         final DataAdapter<V> classConnector) {
         super(TABLENAME_PREFIX + listEngineName,
                 db,
                 new ListEngineTableStatements(db, TABLENAME_PREFIX + listEngineName),
-                binarySerializator);
+                classConnector);
         this.listEngineId = listEngineId;
         this.ascSorting = ascSorting;
         this.classConnector = classConnector;

@@ -1,4 +1,4 @@
-package com.droidkit.util;
+package com.droidkit.engine._internal.util;
 
 import java.lang.ref.WeakReference;
 

@@ -1,8 +1,8 @@
-package com.droidkit.engine.list.adapter;
+package com.droidkit.engine.list;
 
 import java.util.ArrayList;
 
-public interface ListEngineDataAdapter<V>  {
+public interface StorageAdapter<V>  {
 
     void insertSingle(V item);
 

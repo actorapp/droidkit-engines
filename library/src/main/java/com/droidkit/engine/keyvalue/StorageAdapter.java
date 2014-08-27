@@ -1,8 +1,8 @@
-package com.droidkit.engine.keyvalue.adapter;
+package com.droidkit.engine.keyvalue;
 
 import java.util.ArrayList;
 
-public interface KeyValueEngineDataAdapter<V> {
+public interface StorageAdapter<V> {
 
     void insertSingle(V item);
 

@@ -1,4 +1,4 @@
-package com.droidkit.engine.sqlite;
+package com.droidkit.engine._internal.sqlite;
 
 public interface BinarySerializator<V> {
 

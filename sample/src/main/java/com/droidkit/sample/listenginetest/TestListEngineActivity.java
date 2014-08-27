@@ -21,22 +21,20 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.droidkit.core.Logger;
-import com.droidkit.core.Utils;
+import com.droidkit.engine._internal.core.Logger;
+import com.droidkit.engine._internal.core.Utils;
 import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
 import com.droidkit.engine.event.NotificationListener;
+import com.droidkit.engine.list.DataAdapter;
 import com.droidkit.engine.list.ListEngine;
-import com.droidkit.engine.list.ListEngineClassConnector;
-import com.droidkit.engine.list.adapter.SingleListSingleTableDataAdapter;
-import com.droidkit.engine.sqlite.BinarySerializator;
-import com.droidkit.engine.sqlite.DbProvider;
+import com.droidkit.engine.list.sqlite.SingleListSingleTableDataAdapter;
+import com.droidkit.engine._internal.sqlite.DbProvider;
 import com.droidkit.sample.BaseActivity;
 import com.droidkit.sample.view.BlockingListView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Comparator;
 
 import static com.droidkit.sample.listenginetest.TestProto.DialogTest;
 
@@ -89,20 +87,8 @@ public class TestListEngineActivity extends BaseActivity {
         };
 
 
+        final DataAdapter<DialogTest> classConnector = new DataAdapter<DialogTest>() {
 
-        final ListEngineClassConnector<DialogTest> classConnector = new ListEngineClassConnector<DialogTest>() {
-            @Override
-            public long getId(DialogTest value) {
-                return value.getId();
-            }
-
-            @Override
-            public long getSortKey(DialogTest value) {
-                return value.getTime();
-            }
-        };
-
-        final BinarySerializator<DialogTest> serializator = new BinarySerializator<DialogTest>() {
             @Override
             public byte[] serialize(DialogTest entity) {
                 return entity.toByteArray();
@@ -117,17 +103,19 @@ public class TestListEngineActivity extends BaseActivity {
                     return null;
                 }
             }
+
+            @Override
+            public long getId(DialogTest value) {
+                return value.getId();
+            }
+
+            @Override
+            public long getSortKey(DialogTest value) {
+                return value.getTime();
+            }
         };
 
-        listEngine = new ListEngine<DialogTest>(TestListEngineActivity.this, new Comparator<DialogTest>() {
-            @Override
-            public int compare(DialogTest lhs, DialogTest rhs) {
-                int l = (int) (lhs.getTime() % Integer.MAX_VALUE);
-                int r = (int) (rhs.getTime() % Integer.MAX_VALUE);
-                return r - l;
-            }
-        }, new SingleListSingleTableDataAdapter(DbProvider.getDatabase(this), "DIALOG", false, serializator, classConnector),
-                serializator,
+        listEngine = new ListEngine<DialogTest>(new SingleListSingleTableDataAdapter(DbProvider.getDatabase(this), "DIALOG", classConnector),
                 classConnector
         );
         count = 0;
@@ -152,7 +140,7 @@ public class TestListEngineActivity extends BaseActivity {
         clearAll.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(listEngine != null) {
+                if (listEngine != null) {
                     listEngine.clear();
                     count = 0;
                 }
@@ -178,7 +166,7 @@ public class TestListEngineActivity extends BaseActivity {
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(listEngine != null) {
+                if (listEngine != null) {
                     try {
                         final int intNumberToAdd = Integer.parseInt(numberToAdd.getText().toString());
 
@@ -188,7 +176,7 @@ public class TestListEngineActivity extends BaseActivity {
                                 protected Void doInBackground(Void... params) {
                                     ArrayList<DialogTest> tmp = new ArrayList<DialogTest>();
                                     updateTime();
-                                    for(int i = 0; i < intNumberToAdd; ++i) {
+                                    for (int i = 0; i < intNumberToAdd; ++i) {
                                         count++;
                                         final DialogTest example = DialogTest.newBuilder().
                                                 setId(count).setTime(++time).setTitle("Example Title").setText("Example Text").setStatus(1).setImageUrl("Image Url").setLastMessageSenderName("Example Name").build();
@@ -243,7 +231,7 @@ public class TestListEngineActivity extends BaseActivity {
 
             @Override
             public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
-                if(firstVisibleItem + visibleItemCount >= totalItemCount - 5 && listEngine != null) {
+                if (firstVisibleItem + visibleItemCount >= totalItemCount - 5 && listEngine != null) {
                     lv.setBlockLayoutChildren(true);
                     listEngine.loadNextListSlice(PAGE_SIZE);
                 }
@@ -280,7 +268,7 @@ public class TestListEngineActivity extends BaseActivity {
             View v = convertView;
             ViewHolder vh;
 
-            if(v == null) {
+            if (v == null) {
                 final Context self = TestListEngineActivity.this;
 
                 FrameLayout fl = new FrameLayout(self);
@@ -305,7 +293,7 @@ public class TestListEngineActivity extends BaseActivity {
 
             DialogTest item = getItem(position);
 
-            if(item != null) {
+            if (item != null) {
                 vh.title.setText(
                         "ID: " + item.getId() + ", Title: " + item.getTitle() +
                                 "\nCreate time: " + simpleDateFormat.format(item.getTime()) +

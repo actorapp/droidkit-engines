@@ -7,7 +7,7 @@ import android.os.Looper;
 import android.support.v7.app.ActionBarActivity;
 import android.text.TextUtils;
 
-import com.droidkit.core.Logger;
+import com.droidkit.engine._internal.core.Logger;
 
 
 public class BaseActivity extends ActionBarActivity {

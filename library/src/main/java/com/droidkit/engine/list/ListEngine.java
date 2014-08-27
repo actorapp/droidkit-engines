@@ -1,27 +1,23 @@
 package com.droidkit.engine.list;
 
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.widget.Toast;
 
-import com.droidkit.core.Logger;
-import com.droidkit.core.Loop;
-import com.droidkit.core.Utils;
+import com.droidkit.engine._internal.core.Logger;
+import com.droidkit.engine._internal.core.Loop;
+import com.droidkit.engine._internal.core.Utils;
 import com.droidkit.engine.common.ValueCallback;
 import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
-import com.droidkit.engine.list.adapter.ListEngineDataAdapter;
-import com.droidkit.engine.sqlite.BinarySerializator;
-import com.droidkit.util.SortedArrayList;
+import com.droidkit.engine._internal.util.SortedArrayList;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ListEngine<V> {
 
@@ -83,7 +79,7 @@ public class ListEngine<V> {
     /**
      * Database interface
      */
-    protected final ListEngineDataAdapter listEngineDataAdapter;
+    protected final StorageAdapter storageAdapter;
 
     /**
      * Id used in sending of NotificationCenter events
@@ -95,48 +91,52 @@ public class ListEngine<V> {
      */
     protected final InMemoryListLoop inMemoryListLoop;
 
-    protected final BinarySerializator<V> binarySerializator;
-
-    protected final ListEngineClassConnector<V> listEngineClassConnector;
+    /**
+     * Adapter of data for Engine
+     */
+    protected final DataAdapter<V> dataAdapter;
 
     /**
-     * @param comparator             Used for in-memory lists sorting
-     * @param dao                    GreenDao DAO
-     * @param listEngineQueryBuilder
+     * Creating ListEngine instance
+     *
+     * @param context        android context
+     * @param storageAdapter storage adapter
+     * @param dataAdapter    data adapter
      */
-    public ListEngine(final Context context,
-                      final Comparator<V> comparator,
-                      final ListEngineDataAdapter listEngineDataAdapter,
-                      final BinarySerializator<V> binarySerializator,
-                      final ListEngineClassConnector<V> listEngineClassConnector) {
+    public ListEngine(final StorageAdapter storageAdapter,
+                      final DataAdapter<V> dataAdapter) {
 
         this.listEngineId = getNextId();
 
         this.loop = LOOPS[Math.abs(this.listEngineId) % LOOPS_COUNT];
+
+        Comparator<V> comparator = new Comparator<V>() {
+            @Override
+            public int compare(V lhs, V rhs) {
+                long lKey = dataAdapter.getSortKey(lhs);
+                long rKey = dataAdapter.getSortKey(rhs);
+
+                if (lKey > rKey) {
+                    return 1;
+                } else if (lKey < rKey) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            }
+        };
 
         this.inMemorySortedList1 = new SortedArrayList<V>(comparator);
         this.inMemorySortedList2 = new SortedArrayList<V>(comparator);
         this.inMemorySortedList = inMemorySortedList1;
 
         this.inMemoryMap = new ConcurrentHashMap<Long, V>();
-        this.listEngineDataAdapter = listEngineDataAdapter;
-        this.binarySerializator = binarySerializator;
-        this.listEngineClassConnector = listEngineClassConnector;
+        this.storageAdapter = storageAdapter;
+        this.dataAdapter = dataAdapter;
 
         this.inMemoryListLoop = new InMemoryListLoop();
         this.inMemoryListLoop.setPriority(Thread.MIN_PRIORITY);
         this.inMemoryListLoop.start();
-
-        if(Utils.isUIThread()) {
-            this.debugToast = Toast.makeText(context, "", Toast.LENGTH_LONG);
-        } else {
-            Utils.handler.post(new Runnable() {
-                @Override
-                public void run() {
-                    debugToast = Toast.makeText(context, "", Toast.LENGTH_LONG);
-                }
-            });
-        }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -176,7 +176,7 @@ public class ListEngine<V> {
         final boolean isUpdateOnly = update && !add;
         final boolean isAddOrUpdate = update && add;
 
-        final long id = listEngineClassConnector.getId(value);
+        final long id = dataAdapter.getId(value);
 
         modifyInMemoryList(new InMemoryListModification<V>() {
             @Override
@@ -185,7 +185,7 @@ public class ListEngine<V> {
                     Iterator<V> it = list.iterator();
                     while (it.hasNext()) {
                         V value = it.next();
-                        if(listEngineClassConnector.getId(value) == id) {
+                        if (dataAdapter.getId(value) == id) {
                             it.remove();
                             break;
                         }
@@ -202,9 +202,9 @@ public class ListEngine<V> {
             public void run() {
                 final long dbStart = SystemClock.uptimeMillis();
                 if (isUpdateOnly || isAddOrUpdate) {
-                    listEngineDataAdapter.insertOrReplaceSingle(value);
+                    storageAdapter.insertOrReplaceSingle(value);
                 } else if (isAddOnly) {
-                    listEngineDataAdapter.insertSingle(value);
+                    storageAdapter.insertSingle(value);
                 }
 
                 Logger.d(TAG, "DB addOrUpdateItems in " + (SystemClock.uptimeMillis() - dbStart) + "ms");
@@ -233,7 +233,7 @@ public class ListEngine<V> {
         final ArrayList<V> toRemove = new ArrayList<V>();
 
         for (V val : values) {
-            final long id = listEngineClassConnector.getId(val);
+            final long id = dataAdapter.getId(val);
             final V originalValue = inMemoryMap.get(id);
 
             if ((originalValue != null && isUpdateOnly) || isAddOnly || isAddOrUpdate) {
@@ -257,9 +257,9 @@ public class ListEngine<V> {
             public void run() {
                 final long dbStart = SystemClock.uptimeMillis();
                 if (isUpdateOnly || isAddOrUpdate) {
-                    listEngineDataAdapter.insertOrReplaceBatch(values);
+                    storageAdapter.insertOrReplaceBatch(values);
                 } else if (isAddOnly) {
-                    listEngineDataAdapter.insertBatch(values);
+                    storageAdapter.insertBatch(values);
                 }
                 showDebugToast("addOrUpdateItems DB: " + (SystemClock.uptimeMillis() - dbStart) + "ms");
                 Logger.d(TAG, "DB addOrUpdateItems in " + (SystemClock.uptimeMillis() - dbStart) + "ms");
@@ -277,7 +277,7 @@ public class ListEngine<V> {
                     Iterator<V> it = list.iterator();
                     while (it.hasNext()) {
                         V value = it.next();
-                        if(listEngineClassConnector.getId(value) == key) {
+                        if (dataAdapter.getId(value) == key) {
                             it.remove();
                             break;
                         }
@@ -289,7 +289,7 @@ public class ListEngine<V> {
         loop.postRunnable(new Runnable() {
             @Override
             public void run() {
-                listEngineDataAdapter.deleteSingle(key);
+                storageAdapter.deleteSingle(key);
             }
         }, 0);
     }
@@ -309,7 +309,7 @@ public class ListEngine<V> {
                         Logger.d(TAG, "Loading new slice: offset:" + currentDbOffset + ", limit:" + limit);
                         final long start = SystemClock.uptimeMillis();
 
-                        final ArrayList<V> list = listEngineDataAdapter.loadListSlice(limit, currentDbOffset);
+                        final ArrayList<V> list = storageAdapter.loadListSlice(limit, currentDbOffset);
 
                         if (list != null) {
                             lastSliceSize = list.size();
@@ -326,7 +326,7 @@ public class ListEngine<V> {
                             }, list.size());
 
                             for (V val : list) {
-                                inMemoryMap.put(listEngineClassConnector.getId(val), val);
+                                inMemoryMap.put(dataAdapter.getId(val), val);
                             }
                         }
 
@@ -350,7 +350,7 @@ public class ListEngine<V> {
                         Logger.d(TAG, "Loading whole list");
                         final long start = SystemClock.uptimeMillis();
 
-                        final ArrayList<V> list = listEngineDataAdapter.loadAll();
+                        final ArrayList<V> list = storageAdapter.loadAll();
 
                         if (list != null) {
                             lastSliceSize = list.size();
@@ -368,7 +368,7 @@ public class ListEngine<V> {
                             }, list.size());
 
                             for (V val : list) {
-                                inMemoryMap.put(listEngineClassConnector.getId(val), val);
+                                inMemoryMap.put(dataAdapter.getId(val), val);
                             }
                         }
 
@@ -396,7 +396,7 @@ public class ListEngine<V> {
         loop.postRunnable(new Runnable() {
             @Override
             public void run() {
-                V v = (V) listEngineDataAdapter.getById(key);
+                V v = (V) storageAdapter.getById(key);
                 inMemoryMap.put(key, v);
                 valueCallback.value(v);
             }
@@ -419,7 +419,7 @@ public class ListEngine<V> {
             @Override
             public void run() {
                 final long dbStart = SystemClock.uptimeMillis();
-                listEngineDataAdapter.deleteAll();
+                storageAdapter.deleteAll();
                 currentDbOffset = 0;
                 showDebugToast("DB: " + (SystemClock.uptimeMillis() - dbStart) + "ms");
             }
@@ -437,7 +437,7 @@ public class ListEngine<V> {
     }
 
     private synchronized void clearInMemory() {
-        if(Utils.isUIThread()) {
+        if (Utils.isUIThread()) {
             clearMemoryInternal();
         } else {
             HANDLER.post(new Runnable() {
@@ -515,7 +515,7 @@ public class ListEngine<V> {
                         synchronized (inMemoryListSync) {
                             switchActiveList();
                             Logger.d(TAG, "inMemorySortedList1.size():" + inMemorySortedList1.size() + ", inMemorySortedList2.size():" + inMemorySortedList2.size());
-                            NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[] {msg.what});
+                            NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[]{msg.what});
                             inMemoryListSync.notifyAll();
                         }
                     }
@@ -539,7 +539,7 @@ public class ListEngine<V> {
                         public void run() {
                             synchronized (inMemoryListSync) {
                                 modification.modify(getActiveList());
-                                NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[] {msg.what});
+                                NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[]{msg.what});
                                 inMemoryListSync.notifyAll();
                             }
                         }

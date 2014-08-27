@@ -1,22 +1,21 @@
-package com.droidkit.engine.keyvalue.adapter;
+package com.droidkit.engine.keyvalue.sqlite;
 
 import android.database.sqlite.SQLiteDatabase;
 
-import com.droidkit.engine.keyvalue.KeyValueEngineClassConnector;
-import com.droidkit.engine.keyvalue.sqlite.KeyValueEngineDao;
-import com.droidkit.engine.sqlite.BinarySerializator;
+import com.droidkit.engine.keyvalue.DataAdapter;
+import com.droidkit.engine.keyvalue.StorageAdapter;
+import com.droidkit.engine.keyvalue.sqlite.internal.KeyValueEngineDao;
 
 import java.util.ArrayList;
 
-public class KeyValueSqlDataAdapter<V> implements KeyValueEngineDataAdapter<V> {
+public class StorageSqlDataAdapter<V> implements StorageAdapter<V> {
 
     private final KeyValueEngineDao<V> dao;
 
-    public KeyValueSqlDataAdapter(SQLiteDatabase database,
-                                  String name,
-                                  BinarySerializator<V> binarySerializator,
-                                  KeyValueEngineClassConnector<V> classConnector) {
-        dao = new KeyValueEngineDao<V>(name, database, binarySerializator, classConnector);
+    public StorageSqlDataAdapter(SQLiteDatabase database,
+                                 String name,
+                                 DataAdapter<V> adapter) {
+        dao = new KeyValueEngineDao<V>(name, database, adapter);
     }
 
     @Override

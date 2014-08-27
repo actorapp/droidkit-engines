@@ -1,11 +1,10 @@
-package com.droidkit.engine.list.sqlite;
+package com.droidkit.engine.list.sqlite.internal;
 
 
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 
-import com.droidkit.core.Logger;
-import com.droidkit.engine.sqlite.SqlStatements;
+import com.droidkit.engine._internal.sqlite.SqlStatements;
 
 public class ListEngineTableStatements implements SqlStatements {
     private final SQLiteDatabase db;

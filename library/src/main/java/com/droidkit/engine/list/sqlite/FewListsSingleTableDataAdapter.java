@@ -1,14 +1,14 @@
-package com.droidkit.engine.list.adapter;
+package com.droidkit.engine.list.sqlite;
 
 import android.database.sqlite.SQLiteDatabase;
 
-import com.droidkit.engine.list.ListEngineClassConnector;
-import com.droidkit.engine.list.sqlite.ListEngineDao;
-import com.droidkit.engine.sqlite.BinarySerializator;
+import com.droidkit.engine.list.DataAdapter;
+import com.droidkit.engine.list.StorageAdapter;
+import com.droidkit.engine.list.sqlite.internal.ListEngineDao;
 
 import java.util.ArrayList;
 
-public class FewListsSingleTableDataAdapter<V> implements ListEngineDataAdapter {
+public class FewListsSingleTableDataAdapter<V> implements StorageAdapter {
 
     private final ListEngineDao dao;
 
@@ -16,9 +16,8 @@ public class FewListsSingleTableDataAdapter<V> implements ListEngineDataAdapter 
                                           long listEngineId,
                                           String listEngineName,
                                           boolean ascSorting,
-                                          BinarySerializator<V> binarySerializator,
-                                          ListEngineClassConnector<V> classConnector) {
-        dao = new ListEngineDao(listEngineName, listEngineId, database, ascSorting, binarySerializator, classConnector);
+                                          DataAdapter<V> classConnector) {
+        dao = new ListEngineDao(listEngineName, listEngineId, database, ascSorting, classConnector);
     }
 
     @Override

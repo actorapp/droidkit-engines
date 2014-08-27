@@ -4,10 +4,10 @@ import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.droidkit.core.Logger;
-import com.droidkit.core.Loop;
-import com.droidkit.core.Utils;
-import com.droidkit.util.WeakEqualReference;
+import com.droidkit.engine._internal.core.Logger;
+import com.droidkit.engine._internal.core.Loop;
+import com.droidkit.engine._internal.core.Utils;
+import com.droidkit.engine._internal.util.WeakEqualReference;
 
 import java.util.Collections;
 import java.util.Iterator;

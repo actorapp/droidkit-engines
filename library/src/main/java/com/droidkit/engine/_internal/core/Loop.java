@@ -1,4 +1,4 @@
-package com.droidkit.core;
+package com.droidkit.engine._internal.core;
 
 import android.os.Handler;
 import android.os.Looper;

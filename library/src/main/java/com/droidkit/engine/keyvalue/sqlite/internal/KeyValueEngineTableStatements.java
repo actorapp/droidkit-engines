@@ -1,10 +1,10 @@
-package com.droidkit.engine.keyvalue.sqlite;
+package com.droidkit.engine.keyvalue.sqlite.internal;
 
 
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 
-import com.droidkit.engine.sqlite.SqlStatements;
+import com.droidkit.engine._internal.sqlite.SqlStatements;
 
 public class KeyValueEngineTableStatements implements SqlStatements {
     private final SQLiteDatabase db;

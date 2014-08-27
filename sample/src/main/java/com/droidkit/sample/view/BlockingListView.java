@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.ListView;
 
-import com.droidkit.core.Logger;
+import com.droidkit.engine._internal.core.Logger;
 
 public class BlockingListView extends ListView {
 

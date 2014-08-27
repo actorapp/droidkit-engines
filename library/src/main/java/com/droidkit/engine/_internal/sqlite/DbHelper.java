@@ -1,4 +1,4 @@
-package com.droidkit.engine.sqlite;
+package com.droidkit.engine._internal.sqlite;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

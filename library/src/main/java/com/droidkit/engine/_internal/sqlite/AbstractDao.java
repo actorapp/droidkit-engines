@@ -1,4 +1,4 @@
-package com.droidkit.engine.sqlite;
+package com.droidkit.engine._internal.sqlite;
 
 import android.database.CrossProcessCursor;
 import android.database.Cursor;
@@ -6,7 +6,7 @@ import android.database.CursorWindow;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 
-import com.droidkit.core.Logger;
+import com.droidkit.engine._internal.core.Logger;
 
 import java.util.ArrayList;
 

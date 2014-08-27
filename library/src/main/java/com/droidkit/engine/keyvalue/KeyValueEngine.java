@@ -4,20 +4,20 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.v4.util.LruCache;
 
-import com.droidkit.core.Loop;
-import com.droidkit.core.Utils;
+import com.droidkit.engine._internal.core.Loop;
+import com.droidkit.engine._internal.core.Utils;
 import com.droidkit.engine.common.ValueCallback;
 import com.droidkit.engine.common.ValuesCallback;
 import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
-import com.droidkit.engine.keyvalue.adapter.KeyValueEngineDataAdapter;
-import com.droidkit.engine.sqlite.BinarySerializator;
 
 import java.util.ArrayList;
 
 public class KeyValueEngine<V> {
 
     private static final String TAG = "KeyValueEngine";
+
+    private static final int DEFAULT_MEMORY_CACHE = 128;
 
     private static final int MAX_LRU_CACHE_SIZE = 100;
     private static final int LOOPS_COUNT = 2;
@@ -52,59 +52,61 @@ public class KeyValueEngine<V> {
 
     private LruCache<Long, V> inMemoryLruCache;
 
-    private final KeyValueEngineDataAdapter<V> keyValueEngineDataAdapter;
+    private final StorageAdapter<V> storageAdapter;
 
-    private final BinarySerializator<V> binarySerializator;
+    private final DataAdapter<V> dataAdapter;
 
-    private final KeyValueEngineClassConnector<V> keyValueEngineClassConnector;
+    public KeyValueEngine(StorageAdapter<V> storageAdapter,
+                          DataAdapter<V> dataAdapter) {
+        this(storageAdapter, dataAdapter, DEFAULT_MEMORY_CACHE);
 
-    public KeyValueEngine(final KeyValueEngineDataAdapter<V> keyValueEngineDataAdapter,
-                          final BinarySerializator<V> binarySerializator,
-                          final KeyValueEngineClassConnector<V> keyValueEngineClassConnector,
-                          final int inMemoryCacheSize) {
-        uniqueId = getNextId();
-        inMemoryLruCache = new LruCache<Long, V>(inMemoryCacheSize);
+    }
+
+    public KeyValueEngine(StorageAdapter<V> storageAdapter,
+                          DataAdapter<V> dataAdapter,
+                          int inMemoryCacheSize) {
+        this.uniqueId = getNextId();
+        this.inMemoryLruCache = new LruCache<Long, V>(inMemoryCacheSize);
         this.loop = LOOPS[uniqueId % LOOPS_COUNT];
-        this.keyValueEngineDataAdapter = keyValueEngineDataAdapter;
-        this.keyValueEngineClassConnector = keyValueEngineClassConnector;
-        this.binarySerializator = binarySerializator;
+        this.storageAdapter = storageAdapter;
+        this.dataAdapter = dataAdapter;
     }
 
     public void put(final V value) {
-        inMemoryLruCache.put(keyValueEngineClassConnector.getId(value), value);
+        inMemoryLruCache.put(dataAdapter.getId(value), value);
         loop.postRunnable(new Runnable() {
             @Override
             public void run() {
-                keyValueEngineDataAdapter.insertOrReplaceSingle(value);
+                storageAdapter.insertOrReplaceSingle(value);
                 NotificationCenter.getInstance().fireEvent(Events.KEY_VALUE_UPDATE, uniqueId);
             }
         });
     }
 
     public void putSync(final V value) {
-        inMemoryLruCache.put(keyValueEngineClassConnector.getId(value), value);
-        keyValueEngineDataAdapter.insertOrReplaceSingle(value);
+        inMemoryLruCache.put(dataAdapter.getId(value), value);
+        storageAdapter.insertOrReplaceSingle(value);
         NotificationCenter.getInstance().fireEvent(Events.KEY_VALUE_UPDATE, uniqueId);
     }
 
     public void putAll(final ArrayList<V> values) {
-        for(V v : values) {
-            inMemoryLruCache.put(keyValueEngineClassConnector.getId(v), v);
+        for (V v : values) {
+            inMemoryLruCache.put(dataAdapter.getId(v), v);
         }
         loop.postRunnable(new Runnable() {
             @Override
             public void run() {
-                keyValueEngineDataAdapter.insertOrReplaceBatch(values);
+                storageAdapter.insertOrReplaceBatch(values);
                 NotificationCenter.getInstance().fireEvent(Events.KEY_VALUE_UPDATE, uniqueId);
             }
         });
     }
 
     public void putAllSync(final ArrayList<V> values) {
-        for(V v : values) {
-            inMemoryLruCache.put(keyValueEngineClassConnector.getId(v), v);
+        for (V v : values) {
+            inMemoryLruCache.put(dataAdapter.getId(v), v);
         }
-        keyValueEngineDataAdapter.insertOrReplaceBatch(values);
+        storageAdapter.insertOrReplaceBatch(values);
         NotificationCenter.getInstance().fireEvent(Events.KEY_VALUE_UPDATE, uniqueId);
     }
 
@@ -113,12 +115,12 @@ public class KeyValueEngine<V> {
     }
 
     public V getFromDiskSync(final long id) {
-        if(Utils.isUIThread()) {
+        if (Utils.isUIThread()) {
             throw new RuntimeException("getFromDiskSync should be called only from background threads");
         }
 
-        V value = keyValueEngineDataAdapter.getById(id);
-        if(value != null) {
+        V value = storageAdapter.getById(id);
+        if (value != null) {
             inMemoryLruCache.put(id, value);
         }
         return value;
@@ -126,7 +128,7 @@ public class KeyValueEngine<V> {
 
     public V getSync(final long id) {
         V value = getFromMemory(id);
-        if(value == null) {
+        if (value == null) {
             value = getFromDiskSync(id);
         }
         return value;
@@ -151,7 +153,7 @@ public class KeyValueEngine<V> {
     }
 
     public ArrayList<V> getAllFromDiskSync() {
-        return keyValueEngineDataAdapter.loadAll();
+        return storageAdapter.loadAll();
     }
 
     public void clear() {
@@ -159,14 +161,14 @@ public class KeyValueEngine<V> {
         loop.postRunnable(new Runnable() {
             @Override
             public void run() {
-                keyValueEngineDataAdapter.deleteAll();
+                storageAdapter.deleteAll();
             }
         });
     }
 
     public void clearSync() {
         inMemoryLruCache.evictAll();
-        keyValueEngineDataAdapter.deleteAll();
+        storageAdapter.deleteAll();
     }
 
     public void remove(final long id) {
@@ -174,14 +176,14 @@ public class KeyValueEngine<V> {
         loop.postRunnable(new Runnable() {
             @Override
             public void run() {
-                keyValueEngineDataAdapter.deleteSingle(id);
+                storageAdapter.deleteSingle(id);
             }
         });
     }
 
     public void removeSync(final long id) {
         inMemoryLruCache.remove(id);
-        keyValueEngineDataAdapter.deleteSingle(id);
+        storageAdapter.deleteSingle(id);
     }
 
     public int getUniqueId() {

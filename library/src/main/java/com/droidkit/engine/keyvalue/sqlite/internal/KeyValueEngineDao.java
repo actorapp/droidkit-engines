@@ -1,26 +1,22 @@
-package com.droidkit.engine.keyvalue.sqlite;
+package com.droidkit.engine.keyvalue.sqlite.internal;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 
-import com.droidkit.core.Logger;
-import com.droidkit.engine.keyvalue.KeyValueEngineClassConnector;
-import com.droidkit.engine.sqlite.AbstractDao;
-import com.droidkit.engine.sqlite.BinarySerializator;
-import com.droidkit.engine.sqlite.SqlStatements;
+import com.droidkit.engine.keyvalue.DataAdapter;
+import com.droidkit.engine._internal.sqlite.AbstractDao;
 
 import java.util.ArrayList;
 
 public class KeyValueEngineDao<V> extends AbstractDao<V> {
 
-    private final KeyValueEngineClassConnector<V> classConnector;
+    private final DataAdapter<V> classConnector;
 
     public KeyValueEngineDao(String keyValueEngineName,
                                 SQLiteDatabase db,
-                                BinarySerializator<V> serializator,
-                                KeyValueEngineClassConnector<V> classConnector) {
-        super(keyValueEngineName, db, new KeyValueEngineTableStatements(db, keyValueEngineName), serializator);
+                                DataAdapter<V> classConnector) {
+        super(keyValueEngineName, db, new KeyValueEngineTableStatements(db, keyValueEngineName), classConnector);
         this.classConnector = classConnector;
     }
 
