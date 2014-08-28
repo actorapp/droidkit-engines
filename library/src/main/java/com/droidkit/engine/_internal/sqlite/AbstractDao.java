@@ -6,8 +6,6 @@ import android.database.CursorWindow;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 
-import com.droidkit.engine._internal.core.Logger;
-
 import java.util.ArrayList;
 
 public abstract class AbstractDao<V> {
@@ -206,8 +204,6 @@ public abstract class AbstractDao<V> {
             if (window != null) {
                 if (window.getNumRows() == count) {
                     cursor = new FastCursor(window);
-                } else {
-                    Logger.d("Window vs. result size: " + window.getNumRows() + "/" + count);
                 }
             }
         }
@@ -218,7 +214,6 @@ public abstract class AbstractDao<V> {
                 list.add(loadCurrent(cursor));
             } while (cursor.moveToNext());
         }
-        Logger.d(TAG, "Deserealization time " + (System.currentTimeMillis() - start) + "ms");
         return list;
     }
 

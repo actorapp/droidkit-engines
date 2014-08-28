@@ -9,7 +9,6 @@ import com.droidkit.engine._internal.sqlite.AbstractDao;
 
 import java.util.ArrayList;
 
-
 public class ListEngineDao<V> extends AbstractDao<V> {
 
     private static final String TAG = "ListEngine";

@@ -1,14 +1,11 @@
 package com.droidkit.engine.list;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
-import android.widget.Toast;
 
-import com.droidkit.engine._internal.core.Logger;
-import com.droidkit.engine._internal.core.Loop;
-import com.droidkit.engine._internal.core.Utils;
+import com.droidkit.actors.*;
+import com.droidkit.engine._internal.RunnableActor;
+import com.droidkit.engine._internal.util.Utils;
 import com.droidkit.engine.common.ValueCallback;
 import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
@@ -18,44 +15,14 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListEngine<V> {
 
-    private static final boolean ENABLE_TOAST_LOG = false;
+    private static final AtomicInteger NEXT_ID = new AtomicInteger(1);
 
-    private static final String TAG = "ListEngine";
-
-    private static final int LOOPS_COUNT = 2;
-    private static final Loop[] LOOPS = new Loop[LOOPS_COUNT];
-    private static final Handler HANDLER = new Handler(Looper.getMainLooper());
-
-    static {
-        for (int i = 0; i < LOOPS_COUNT; ++i) {
-            LOOPS[i] = new Loop("ListEngine-Loop-" + i);
-            LOOPS[i].setPriority(Thread.MIN_PRIORITY);
-            LOOPS[i].start();
-        }
-    }
-
-    private static volatile int lastId = 0;
-
-    private static synchronized int getNextId() {
-        lastId++;
-        return lastId;
-    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Toast for screen debug output
-     */
-    protected Toast debugToast;
-
-
-    /**
-     * Loop for all database operations
-     */
-    protected final Loop loop;
 
 
     /**
@@ -89,7 +56,17 @@ public class ListEngine<V> {
     /**
      * Loop for all in-memory lists operation
      */
-    protected final InMemoryListLoop inMemoryListLoop;
+    protected final ActorRef listActor;
+
+    /**
+     * Loop for all database operations
+     */
+    protected final ActorRef dbActor;
+
+    /**
+     * Ui Notifications actor
+     */
+    protected final ActorRef uiActor;
 
     /**
      * Adapter of data for Engine
@@ -99,16 +76,13 @@ public class ListEngine<V> {
     /**
      * Creating ListEngine instance
      *
-     * @param context        android context
      * @param storageAdapter storage adapter
      * @param dataAdapter    data adapter
      */
     public ListEngine(final StorageAdapter storageAdapter,
                       final DataAdapter<V> dataAdapter) {
 
-        this.listEngineId = getNextId();
-
-        this.loop = LOOPS[Math.abs(this.listEngineId) % LOOPS_COUNT];
+        this.listEngineId = NEXT_ID.getAndIncrement();
 
         Comparator<V> comparator = new Comparator<V>() {
             @Override
@@ -134,9 +108,9 @@ public class ListEngine<V> {
         this.storageAdapter = storageAdapter;
         this.dataAdapter = dataAdapter;
 
-        this.inMemoryListLoop = new InMemoryListLoop();
-        this.inMemoryListLoop.setPriority(Thread.MIN_PRIORITY);
-        this.inMemoryListLoop.start();
+        dbActor = ActorSystem.system().actorOf(db());
+        listActor = ActorSystem.system().actorOf(memoryList());
+        uiActor = ActorSystem.system().actorOf(RunnableActor.class, "engines_notify");
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -197,7 +171,7 @@ public class ListEngine<V> {
 
         inMemoryMap.put(id, value);
 
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 final long dbStart = SystemClock.uptimeMillis();
@@ -206,10 +180,8 @@ public class ListEngine<V> {
                 } else if (isAddOnly) {
                     storageAdapter.insertSingle(value);
                 }
-
-                Logger.d(TAG, "DB addOrUpdateItems in " + (SystemClock.uptimeMillis() - dbStart) + "ms");
             }
-        }, 0);
+        });
     }
 
     public synchronized void addItems(final ArrayList<V> values) {
@@ -252,7 +224,7 @@ public class ListEngine<V> {
             }
         }, values.size());
 
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 final long dbStart = SystemClock.uptimeMillis();
@@ -261,11 +233,10 @@ public class ListEngine<V> {
                 } else if (isAddOnly) {
                     storageAdapter.insertBatch(values);
                 }
-                showDebugToast("addOrUpdateItems DB: " + (SystemClock.uptimeMillis() - dbStart) + "ms");
-                Logger.d(TAG, "DB addOrUpdateItems in " + (SystemClock.uptimeMillis() - dbStart) + "ms");
+                // showDebugToast("addOrUpdateItems DB: " + (SystemClock.uptimeMillis() - dbStart) + "ms");
 
             }
-        }, 0);
+        });
     }
 
     public synchronized void removeItem(final long key) {
@@ -286,12 +257,12 @@ public class ListEngine<V> {
             }, -1);
         }
 
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 storageAdapter.deleteSingle(key);
             }
-        }, 0);
+        });
     }
 
     public synchronized int getCountInMemoryList() {
@@ -302,11 +273,12 @@ public class ListEngine<V> {
         if (!isDbSliceLoadingInProgress && lastSliceSize > 0) {
             isDbSliceLoadingInProgress = true;
 
-            loop.postRunnable(new Runnable() {
+
+            dbActor.send(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        Logger.d(TAG, "Loading new slice: offset:" + currentDbOffset + ", limit:" + limit);
+                        // Logger.d(TAG, "Loading new slice: offset:" + currentDbOffset + ", limit:" + limit);
                         final long start = SystemClock.uptimeMillis();
 
                         final ArrayList<V> list = storageAdapter.loadListSlice(limit, currentDbOffset);
@@ -315,8 +287,8 @@ public class ListEngine<V> {
                             lastSliceSize = list.size();
                             currentDbOffset += lastSliceSize;
 
-                            Logger.d(TAG, "Loaded " + lastSliceSize + " items in " + (SystemClock.uptimeMillis() - start) + "ms");
-                            showDebugToast("loadNextListSlice(" + limit + ") in " + (SystemClock.uptimeMillis() - start) + "ms");
+                            // Logger.d(TAG, "Loaded " + lastSliceSize + " items in " + (SystemClock.uptimeMillis() - start) + "ms");
+                            // showDebugToast("loadNextListSlice(" + limit + ") in " + (SystemClock.uptimeMillis() - start) + "ms");
 
                             modifyInMemoryList(new InMemoryListModification<V>() {
                                 @Override
@@ -331,7 +303,8 @@ public class ListEngine<V> {
                         }
 
                     } catch (Exception e) {
-                        Logger.e(TAG, "Error loading DB slice", e);
+                        // Logger.e(TAG, "Error loading DB slice", e);
+                        e.printStackTrace();
                     }
                     isDbSliceLoadingInProgress = false;
                 }
@@ -343,11 +316,11 @@ public class ListEngine<V> {
         if (!isDbSliceLoadingInProgress && lastSliceSize > 0) {
             isDbSliceLoadingInProgress = true;
 
-            loop.postRunnable(new Runnable() {
+            dbActor.send(new Runnable() {
                 @Override
                 public void run() {
                     try {
-                        Logger.d(TAG, "Loading whole list");
+                        // Logger.d(TAG, "Loading whole list");
                         final long start = SystemClock.uptimeMillis();
 
                         final ArrayList<V> list = storageAdapter.loadAll();
@@ -356,8 +329,8 @@ public class ListEngine<V> {
                             lastSliceSize = list.size();
                             currentDbOffset += lastSliceSize;
 
-                            Logger.d(TAG, "Loaded " + lastSliceSize + " items in " + (SystemClock.uptimeMillis() - start) + "ms");
-                            showDebugToast("loadAll() in " + (SystemClock.uptimeMillis() - start) + "ms");
+                            // Logger.d(TAG, "Loaded " + lastSliceSize + " items in " + (SystemClock.uptimeMillis() - start) + "ms");
+                            // showDebugToast("loadAll() in " + (SystemClock.uptimeMillis() - start) + "ms");
 
                             modifyInMemoryList(new InMemoryListModification<V>() {
                                 @Override
@@ -373,7 +346,8 @@ public class ListEngine<V> {
                         }
 
                     } catch (Exception e) {
-                        Logger.e(TAG, "Error loading DB slice", e);
+                        e.printStackTrace();
+                        // Logger.e(TAG, "Error loading DB slice", e);
                     }
                     isDbSliceLoadingInProgress = false;
                 }
@@ -393,7 +367,7 @@ public class ListEngine<V> {
     }
 
     public synchronized void getValueFromDb(final long key, final ValueCallback<V> valueCallback) {
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 V v = (V) storageAdapter.getById(key);
@@ -415,13 +389,13 @@ public class ListEngine<V> {
 
         clearInMemory();
 
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 final long dbStart = SystemClock.uptimeMillis();
                 storageAdapter.deleteAll();
                 currentDbOffset = 0;
-                showDebugToast("DB: " + (SystemClock.uptimeMillis() - dbStart) + "ms");
+                // showDebugToast("DB: " + (SystemClock.uptimeMillis() - dbStart) + "ms");
             }
         }, 0);
     }
@@ -440,22 +414,10 @@ public class ListEngine<V> {
         if (Utils.isUIThread()) {
             clearMemoryInternal();
         } else {
-            HANDLER.post(new Runnable() {
+            uiActor.send(new Runnable() {
                 @Override
                 public void run() {
                     clearMemoryInternal();
-                }
-            });
-        }
-    }
-
-    private void showDebugToast(final String text) {
-        if (ENABLE_TOAST_LOG) {
-            HANDLER.post(new Runnable() {
-                @Override
-                public void run() {
-                    debugToast.setText(text);
-                    debugToast.show();
                 }
             });
         }
@@ -488,73 +450,116 @@ public class ListEngine<V> {
     }
 
     private synchronized void modifyInMemoryList(InMemoryListModification<V> modification, int changeSize) {
-        inMemoryListLoop.postMessage(Message.obtain(inMemoryListLoop.handler, changeSize, modification), 0);
+        listActor.send(new ChangeList<V>(modification, changeSize));
     }
 
     private final Object inMemoryListSync = new Object();
 
-    private class InMemoryListLoop extends Loop {
+    private interface InMemoryListModification<V> {
+        void modify(final SortedArrayList<V> list);
+    }
 
-        public InMemoryListLoop() {
-            super("ListEngine-InMemoryList-" + listEngineId);
-        }
+    public ActorSelection db() {
+        return new ActorSelection(Props.create(RunnableActor.class, new ActorCreator<RunnableActor>() {
+            @Override
+            public RunnableActor create() {
+                return new RunnableActor();
+            }
+        }).changeDispatcher("db"), "list_db_" + listEngineId);
+    }
 
-        @Override
-        protected void processMessage(final Message msg) {
-            synchronized (inMemoryListSync) {
+    public ActorSelection memoryList() {
+        return new ActorSelection(Props.create(MemoryListActor.class, new ActorCreator<MemoryListActor>() {
+            @Override
+            public MemoryListActor create() {
+                return new MemoryListActor(ListEngine.this);
+            }
+        }), "list_" + listEngineId);
+    }
 
-                final InMemoryListModification<V> modification = (InMemoryListModification<V>) msg.obj;
+    void doChangeList(final ChangeList<V> changeList) {
+        synchronized (inMemoryListSync) {
+            final InMemoryListModification<V> modification = changeList.getModification();
+            final SortedArrayList<V> beginInactiveList = getInactiveList();
 
-                final SortedArrayList<V> beginInactiveList = getInactiveList();
+            modification.modify(beginInactiveList);
 
-                modification.modify(beginInactiveList);
+            uiActor.send(new Runnable() {
+                @Override
+                public void run() {
+                    synchronized (inMemoryListSync) {
+                        switchActiveList();
+                        // Logger.d(TAG, "inMemorySortedList1.size():" + inMemorySortedList1.size() + ", inMemorySortedList2.size():" + inMemorySortedList2.size());
+                        NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[]{changeList.getSize()});
+                        inMemoryListSync.notifyAll();
+                    }
+                }
+            }, 5);
 
-                HANDLER.postDelayed(new Runnable() {
+            try {
+                inMemoryListSync.wait(5000);
+            } catch (InterruptedException e) {
+                // Logger.d(e);
+            }
+
+            final SortedArrayList<V> endInactiveList = getInactiveList();
+            if (beginInactiveList != endInactiveList) {
+                modification.modify(endInactiveList);
+            } else {
+                //SOMETHING WENT WRONG!
+                // Logger.e(TAG, "Error in memories list sync");
+                // Logger.e(TAG, "inMemorySortedList1.size():" + inMemorySortedList1.size() + ", inMemorySortedList2.size():" + inMemorySortedList2.size());
+                uiActor.send(new Runnable() {
                     @Override
                     public void run() {
                         synchronized (inMemoryListSync) {
-                            switchActiveList();
-                            Logger.d(TAG, "inMemorySortedList1.size():" + inMemorySortedList1.size() + ", inMemorySortedList2.size():" + inMemorySortedList2.size());
-                            NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[]{msg.what});
+                            modification.modify(getActiveList());
+                            NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[]{changeList.getSize()});
                             inMemoryListSync.notifyAll();
                         }
                     }
                 }, 5);
-
                 try {
                     inMemoryListSync.wait(5000);
                 } catch (InterruptedException e) {
-                    Logger.d(e);
-                }
-
-                final SortedArrayList<V> endInactiveList = getInactiveList();
-                if (beginInactiveList != endInactiveList) {
-                    modification.modify(endInactiveList);
-                } else {
-                    //SOMETHING WENT WRONG!
-                    Logger.e(TAG, "Error in memories list sync");
-                    Logger.e(TAG, "inMemorySortedList1.size():" + inMemorySortedList1.size() + ", inMemorySortedList2.size():" + inMemorySortedList2.size());
-                    HANDLER.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            synchronized (inMemoryListSync) {
-                                modification.modify(getActiveList());
-                                NotificationCenter.getInstance().fireEvent(Events.LIST_ENGINE_UI_LIST_UPDATE, listEngineId, new Integer[]{msg.what});
-                                inMemoryListSync.notifyAll();
-                            }
-                        }
-                    }, 5);
-                    try {
-                        inMemoryListSync.wait(5000);
-                    } catch (InterruptedException e) {
-                        Logger.d(e);
-                    }
+                    e.printStackTrace();
+                    // Logger.d(e);
                 }
             }
         }
     }
 
-    private interface InMemoryListModification<V> {
-        void modify(final SortedArrayList<V> list);
+    public static class MemoryListActor extends Actor {
+
+        private ListEngine engine;
+
+        public MemoryListActor(ListEngine engine) {
+            this.engine = engine;
+        }
+
+        @Override
+        public void onReceive(Object message) {
+            if (message instanceof ChangeList) {
+                engine.doChangeList((ChangeList) message);
+            }
+        }
+    }
+
+    private static class ChangeList<V> {
+        private final InMemoryListModification<V> modification;
+        private final int size;
+
+        private ChangeList(InMemoryListModification<V> modification, int size) {
+            this.modification = modification;
+            this.size = size;
+        }
+
+        public InMemoryListModification<V> getModification() {
+            return modification;
+        }
+
+        public int getSize() {
+            return size;
+        }
     }
 }

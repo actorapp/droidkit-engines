@@ -8,15 +8,15 @@ import com.droidkit.engine.list.sqlite.internal.ListEngineDao;
 
 import java.util.ArrayList;
 
-public class FewListsSingleTableDataAdapter<V> implements StorageAdapter {
+public class SQLiteMultipleStorageAdapter<V> implements StorageAdapter {
 
     private final ListEngineDao dao;
 
-    public FewListsSingleTableDataAdapter(SQLiteDatabase database,
-                                          long listEngineId,
-                                          String listEngineName,
-                                          boolean ascSorting,
-                                          DataAdapter<V> classConnector) {
+    public SQLiteMultipleStorageAdapter(SQLiteDatabase database,
+                                        long listEngineId,
+                                        String listEngineName,
+                                        boolean ascSorting,
+                                        DataAdapter<V> classConnector) {
         dao = new ListEngineDao(listEngineName, listEngineId, database, ascSorting, classConnector);
     }
 

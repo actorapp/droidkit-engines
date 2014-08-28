@@ -8,13 +8,13 @@ import com.droidkit.engine.keyvalue.sqlite.internal.KeyValueEngineDao;
 
 import java.util.ArrayList;
 
-public class StorageSqlDataAdapter<V> implements StorageAdapter<V> {
+public class SQLiteStorageAdapter<V> implements StorageAdapter<V> {
 
     private final KeyValueEngineDao<V> dao;
 
-    public StorageSqlDataAdapter(SQLiteDatabase database,
-                                 String name,
-                                 DataAdapter<V> adapter) {
+    public SQLiteStorageAdapter(SQLiteDatabase database,
+                                String name,
+                                DataAdapter<V> adapter) {
         dao = new KeyValueEngineDao<V>(name, database, adapter);
     }
 

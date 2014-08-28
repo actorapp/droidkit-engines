@@ -4,9 +4,8 @@ import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.droidkit.engine._internal.core.Logger;
-import com.droidkit.engine._internal.core.Loop;
-import com.droidkit.engine._internal.core.Utils;
+import com.droidkit.actors.dispatch.RunnableDispatcher;
+import com.droidkit.engine._internal.util.Utils;
 import com.droidkit.engine._internal.util.WeakEqualReference;
 
 import java.util.Collections;
@@ -25,9 +24,9 @@ public class NotificationCenter {
     private volatile static NotificationCenter instance;
 
     public static NotificationCenter getInstance() {
-        if(instance == null) {
-            synchronized(NotificationCenter.class) {
-                if(instance == null) {
+        if (instance == null) {
+            synchronized (NotificationCenter.class) {
+                if (instance == null) {
                     instance = new NotificationCenter();
                 }
             }
@@ -37,13 +36,12 @@ public class NotificationCenter {
 
     @SuppressLint("NewApi")
     private NotificationCenter() {
-        backgroundFireLoop = new Loop("BackgroundFireLoop");
-        backgroundFireLoop.start();
+        backgroundFireLoop = new RunnableDispatcher(1);
 
         listeners = Collections.newSetFromMap(new ConcurrentHashMap<WeakEqualReference<OnNotificationListenerContainer>, Boolean>());
 
         states = new ConcurrentHashMap<Integer, State>();
-        
+
         statesValues = new ConcurrentHashMap<String, Object[]>();
     }
 
@@ -56,7 +54,7 @@ public class NotificationCenter {
     /**
      * Loop for background event fires
      */
-    private final Loop backgroundFireLoop;
+    private final RunnableDispatcher backgroundFireLoop;
 
     /**
      * Active listeners storage
@@ -85,6 +83,7 @@ public class NotificationCenter {
     /**
      * Add new listener for specified eventType and eventId
      * You must keep a strong reference to your listener somewhere to prevent GC from removing it from memory
+     *
      * @param eventType
      * @param eventId
      * @param notificationListener
@@ -103,7 +102,7 @@ public class NotificationCenter {
             }
         }
 
-        if(notificationListener != null) {
+        if (notificationListener != null) {
             listeners.add(new WeakEqualReference<OnNotificationListenerContainer>(
                     new OnNotificationListenerContainer(eventType, eventId, notificationListener, Utils.isUIThread())
             ));
@@ -112,6 +111,7 @@ public class NotificationCenter {
 
     /**
      * The same addListener(int, int, NotificationListener), but with eventId == NO_ID
+     *
      * @param eventType
      * @param notificationListener
      */
@@ -126,7 +126,7 @@ public class NotificationCenter {
         while (it.hasNext()) {
             final WeakEqualReference<OnNotificationListenerContainer> weakListenerContainer = it.next();
             final OnNotificationListenerContainer listenerContainer = weakListenerContainer.get();
-            if(listenerContainer == null) {
+            if (listenerContainer == null) {
                 it.remove();
             } else if (listenerContainer.listener == notificationListener) {
                 synchronized (fireRemoveSyncObject) {
@@ -145,20 +145,20 @@ public class NotificationCenter {
         final boolean isUiThread = Utils.isUIThread();
 
         final State state = states.get(eventType);
-        if(state != null) {
+        if (state != null) {
             statesValues.put(getKeyForEvent(eventType, eventId), args);
         }
         while (it.hasNext()) {
             final WeakEqualReference<OnNotificationListenerContainer> weakListenerContainer = it.next();
             final OnNotificationListenerContainer listenerContainer = weakListenerContainer.get();
 
-            if(listenerContainer == null) {
+            if (listenerContainer == null) {
                 it.remove();
             } else if (listenerContainer.eventType == eventType && listenerContainer.eventId == eventId) {
 
                 synchronized (fireRemoveSyncObject) {
-                    if(!listenerContainer.isDeleted()) {
-                        if(isUiThread && listenerContainer.wasAddedInUIThread) {
+                    if (!listenerContainer.isDeleted()) {
+                        if (isUiThread && listenerContainer.wasAddedInUIThread) {
                             listenerContainer.listener.onNotification(eventType, eventId, args);
                             continue;
                         }
@@ -167,16 +167,16 @@ public class NotificationCenter {
                             public void run() {
                                 synchronized (fireRemoveSyncObject) {
                                     //double-check here
-                                    if(!listenerContainer.isDeleted()) {
+                                    if (!listenerContainer.isDeleted()) {
                                         listenerContainer.listener.onNotification(eventType, eventId, args);
                                     }
                                 }
                             }
                         };
-                        if(listenerContainer.wasAddedInUIThread) {
+                        if (listenerContainer.wasAddedInUIThread) {
                             handler.post(fireEvent);
                         } else {
-                            backgroundFireLoop.postRunnable(fireEvent, 0);
+                            backgroundFireLoop.postAction(fireEvent);
                         }
                     }
                 }
@@ -186,6 +186,7 @@ public class NotificationCenter {
 
     /**
      * The same as fireEvent(int, int, Object[]), but with args == null
+     *
      * @param eventType
      * @param eventId
      */
@@ -195,6 +196,7 @@ public class NotificationCenter {
 
     /**
      * The same as fireEvent(int, int, Object[]), but with eventId == NO_ID
+     *
      * @param eventType
      * @param args
      */
@@ -204,6 +206,7 @@ public class NotificationCenter {
 
     /**
      * The same as fireEvent(int, int, Object[]), but with args == null and eventId == NO_ID
+     *
      * @param eventType
      */
     public void fireEvent(final int eventType) {
@@ -269,28 +272,6 @@ public class NotificationCenter {
 
         public void setDeleted(final boolean deleted) {
             this.deleted = deleted;
-        }
-    }
-
-
-    //DEBUG
-    public void printCurrentListeners() {
-        synchronized (fireRemoveSyncObject) {
-            Logger.d(TAG, "---------------------------------------");
-
-            final Iterator<WeakEqualReference<OnNotificationListenerContainer>> it = listeners.iterator();
-
-            while (it.hasNext()) {
-                final WeakEqualReference<OnNotificationListenerContainer> weakListenerContainer = it.next();
-                final OnNotificationListenerContainer listenerContainer = weakListenerContainer.get();
-                if(listenerContainer != null) {
-                    Logger.d(TAG, listeners.toString());
-                } else {
-                    Logger.d(TAG, "Empty WeakReference, removing");
-                    it.remove();
-                }
-            }
-            Logger.d(TAG, "---------------------------------------");
         }
     }
 }

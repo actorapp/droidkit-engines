@@ -22,13 +22,13 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.droidkit.engine._internal.core.Logger;
-import com.droidkit.engine._internal.core.Utils;
+import com.droidkit.engine._internal.util.Utils;
 import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
 import com.droidkit.engine.event.NotificationListener;
 import com.droidkit.engine.list.DataAdapter;
 import com.droidkit.engine.list.ListEngine;
-import com.droidkit.engine.list.sqlite.SingleListSingleTableDataAdapter;
+import com.droidkit.engine.list.sqlite.SQLiteStorageAdapter;
 import com.droidkit.engine._internal.sqlite.DbProvider;
 import com.droidkit.sample.BaseActivity;
 import com.droidkit.sample.view.BlockingListView;
@@ -115,7 +115,7 @@ public class TestListEngineActivity extends BaseActivity {
             }
         };
 
-        listEngine = new ListEngine<DialogTest>(new SingleListSingleTableDataAdapter(DbProvider.getDatabase(this), "DIALOG", classConnector),
+        listEngine = new ListEngine<DialogTest>(new SQLiteStorageAdapter(DbProvider.getDatabase(this), "DIALOG", classConnector),
                 classConnector
         );
         count = 0;

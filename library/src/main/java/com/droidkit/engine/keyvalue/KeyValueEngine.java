@@ -1,17 +1,18 @@
 package com.droidkit.engine.keyvalue;
 
-import android.os.Handler;
-import android.os.Looper;
 import android.support.v4.util.LruCache;
 
-import com.droidkit.engine._internal.core.Loop;
-import com.droidkit.engine._internal.core.Utils;
+import com.droidkit.actors.ActorRef;
+import com.droidkit.actors.ActorSystem;
+import com.droidkit.engine._internal.RunnableActor;
+import com.droidkit.engine._internal.util.Utils;
 import com.droidkit.engine.common.ValueCallback;
 import com.droidkit.engine.common.ValuesCallback;
 import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class KeyValueEngine<V> {
 
@@ -19,31 +20,12 @@ public class KeyValueEngine<V> {
 
     private static final int DEFAULT_MEMORY_CACHE = 128;
 
-    private static final int MAX_LRU_CACHE_SIZE = 100;
-    private static final int LOOPS_COUNT = 2;
-    private static final Loop[] LOOPS = new Loop[LOOPS_COUNT];
-    private static final Handler HANDLER = new Handler(Looper.getMainLooper());
-
-    static {
-        for (int i = 0; i < LOOPS_COUNT; ++i) {
-            LOOPS[i] = new Loop("KeyValueEngine-Loop-" + i);
-            LOOPS[i].setPriority(Thread.MIN_PRIORITY);
-            LOOPS[i].start();
-        }
-    }
-
-    private static volatile int lastId = 0;
-
-    private static synchronized int getNextId() {
-        lastId++;
-        return lastId;
-    }
-
+    private static final AtomicInteger NEXT_ID = new AtomicInteger(1);
 
     /**
      * Loop for all database operations
      */
-    protected final Loop loop;
+    protected final ActorRef dbActor;
 
     /**
      * Id used in sending of NotificationCenter events
@@ -65,16 +47,16 @@ public class KeyValueEngine<V> {
     public KeyValueEngine(StorageAdapter<V> storageAdapter,
                           DataAdapter<V> dataAdapter,
                           int inMemoryCacheSize) {
-        this.uniqueId = getNextId();
+        this.uniqueId = NEXT_ID.getAndIncrement();
         this.inMemoryLruCache = new LruCache<Long, V>(inMemoryCacheSize);
-        this.loop = LOOPS[uniqueId % LOOPS_COUNT];
         this.storageAdapter = storageAdapter;
         this.dataAdapter = dataAdapter;
+        this.dbActor = ActorSystem.system().actorOf(RunnableActor.class, "key_value_db_" + uniqueId);
     }
 
     public void put(final V value) {
         inMemoryLruCache.put(dataAdapter.getId(value), value);
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 storageAdapter.insertOrReplaceSingle(value);
@@ -93,7 +75,7 @@ public class KeyValueEngine<V> {
         for (V v : values) {
             inMemoryLruCache.put(dataAdapter.getId(v), v);
         }
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 storageAdapter.insertOrReplaceBatch(values);
@@ -135,7 +117,7 @@ public class KeyValueEngine<V> {
     }
 
     public void getFromDisk(final long id, final ValueCallback<V> callback) {
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 callback.value(getFromDiskSync(id));
@@ -144,7 +126,7 @@ public class KeyValueEngine<V> {
     }
 
     public void getAllFromDisk(final ValuesCallback<V> callback) {
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 callback.values(getAllFromDiskSync());
@@ -158,7 +140,7 @@ public class KeyValueEngine<V> {
 
     public void clear() {
         inMemoryLruCache.evictAll();
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 storageAdapter.deleteAll();
@@ -173,7 +155,7 @@ public class KeyValueEngine<V> {
 
     public void remove(final long id) {
         inMemoryLruCache.remove(id);
-        loop.postRunnable(new Runnable() {
+        dbActor.send(new Runnable() {
             @Override
             public void run() {
                 storageAdapter.deleteSingle(id);
