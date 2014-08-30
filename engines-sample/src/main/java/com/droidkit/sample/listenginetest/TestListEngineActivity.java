@@ -21,7 +21,6 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.droidkit.engine._internal.core.Logger;
 import com.droidkit.engine._internal.util.Utils;
 import com.droidkit.engine.event.Events;
 import com.droidkit.engine.event.NotificationCenter;
@@ -70,13 +69,6 @@ public class TestListEngineActivity extends BaseActivity {
             public void onNotification(int eventType, int eventId, Object[] eventArgs) {
                 if (isFirstLoad) {
                     isFirstLoad = false;
-                    final long stop = SystemClock.uptimeMillis();
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            Utils.showToast(TestListEngineActivity.this, "First data loaded in " + (stop - start) + "ms");
-                        }
-                    }, 3000);
                 }
 
                 if (adapter != null && lv != null) {
@@ -99,7 +91,7 @@ public class TestListEngineActivity extends BaseActivity {
                 try {
                     return DialogTest.parseFrom(item);
                 } catch (Exception e) {
-                    Logger.d("tmp", "", e);
+                    e.printStackTrace();
                     return null;
                 }
             }
@@ -198,7 +190,7 @@ public class TestListEngineActivity extends BaseActivity {
                                         try {
                                             listEngine.addOrUpdateItem(example);
                                         } catch (Exception e) {
-                                            Logger.d("tmp", "", e);
+                                            e.printStackTrace();
                                         }
                                     }
                                     return null;
@@ -207,7 +199,7 @@ public class TestListEngineActivity extends BaseActivity {
                         }
 
                     } catch (Exception e) {
-                        Utils.showToast(TestListEngineActivity.this, "Error parsing number");
+                        e.printStackTrace();
                     }
                 }
             }

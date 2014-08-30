@@ -4,6 +4,7 @@ import android.os.Message;
 import android.os.SystemClock;
 
 import com.droidkit.actors.*;
+import com.droidkit.engine.Engines;
 import com.droidkit.engine._internal.RunnableActor;
 import com.droidkit.engine._internal.util.Utils;
 import com.droidkit.engine.common.ValueCallback;
@@ -18,6 +19,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListEngine<V> {
+
+    static {
+        Engines.init();
+    }
 
     private static final AtomicInteger NEXT_ID = new AtomicInteger(1);
 

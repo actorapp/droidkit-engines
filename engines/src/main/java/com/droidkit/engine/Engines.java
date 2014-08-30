@@ -5,11 +5,25 @@ import com.droidkit.actors.android.UiActorDispatcher;
 import com.droidkit.actors.mailbox.ActorDispatcher;
 
 /**
- * Created by ex3ndr on 28.08.14.
+ * Engine library initialization.
  */
 public class Engines {
+
+    private static volatile boolean isInited = false;
+    private static Object initLock = new Object();
+
+    /**
+     * Pefrorm initialization\
+     */
     public static void init() {
-        ActorSystem.system().addDispatcher("db", new ActorDispatcher(ActorSystem.system(), 1, Thread.MIN_PRIORITY));
-        ActorSystem.system().addDispatcher("ui", new UiActorDispatcher(ActorSystem.system()));
+        if (!isInited) {
+            synchronized (initLock) {
+                if (!isInited) {
+                    isInited = true;
+                    ActorSystem.system().addDispatcher("db", new ActorDispatcher(ActorSystem.system(), 1, Thread.MIN_PRIORITY));
+                    ActorSystem.system().addDispatcher("ui", new UiActorDispatcher(ActorSystem.system()));
+                }
+            }
+        }
     }
 }

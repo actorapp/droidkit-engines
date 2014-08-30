@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 
 import com.droidkit.actors.dispatch.RunnableDispatcher;
+import com.droidkit.engine.Engines;
 import com.droidkit.engine._internal.util.Utils;
 import com.droidkit.engine._internal.util.WeakEqualReference;
 
@@ -14,6 +15,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class NotificationCenter {
+
+    static {
+        Engines.init();
+    }
 
     private static final String KEY_DELIMITER = "-";
 

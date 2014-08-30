@@ -4,8 +4,6 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.widget.ListView;
 
-import com.droidkit.engine._internal.core.Logger;
-
 public class BlockingListView extends ListView {
 
     private boolean mBlockLayoutChildren;
@@ -33,7 +31,7 @@ public class BlockingListView extends ListView {
             try {
                 super.layoutChildren();
             } catch (Exception e) {
-                Logger.e(e);
+                e.printStackTrace();
             }
         }
     }

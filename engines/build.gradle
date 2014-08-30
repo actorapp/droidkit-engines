@@ -1,4 +1,9 @@
 apply plugin: 'android-library'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+group = 'com.droidkit'
+version = '1.1.0'
 
 android {
     compileSdkVersion 19
@@ -16,18 +21,98 @@ android {
             runProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
-
-        /* applicationVariants.all { variant ->
-            def file = variant.outputFile
-            //  Dirty hack
-            if (file.name == "library.aar") {
-                variant.outputFile = new File("$project.buildDir/aar/DroidKit-" + defaultConfig.versionName + ".aar")
-            }
-        }*/
     }
 
     lintOptions {
         abortOnError false
+    }
+}
+
+// Android JavaDocs
+android.libraryVariants.all { variant ->
+    task("${variant.name}Javadoc", type: Javadoc) {
+        destinationDir = new File("$project.buildDir/javadoc/$variant.name")
+
+        source = variant.javaCompile.source
+        exclude '**/BuildConfig.java'
+        exclude '**/R.java'
+
+        ext.androidJar = "${android.plugin.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
+        classpath = files(variant.javaCompile.classpath.files) + files(ext.androidJar)
+    }
+
+    task("${variant.name}JavadocJar", type: Jar, dependsOn: "${variant.name}Javadoc") {
+        classifier 'javadoc'
+        destinationDir = new File("$project.buildDir/libs/")
+        from "$project.buildDir/javadoc/$variant.name"
+    }
+
+    task("${variant.name}SourcesJar", type: Jar) {
+        classifier 'sources'
+
+        destinationDir = new File("$project.buildDir/libs/")
+
+        from variant.javaCompile.source
+        exclude '**/BuildConfig.java'
+        exclude '**/R.java'
+    }
+}
+
+project.afterEvaluate {
+    artifacts {
+        archives releaseJavadocJar
+        archives releaseSourcesJar
+    }
+
+    if (project.hasProperty("ossrhUsername") && project.hasProperty("ossrhPassword")) {
+
+        signing {
+            sign configurations.archives
+        }
+
+        uploadArchives {
+            repositories {
+                mavenDeployer {
+                    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+                    repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                        authentication(userName: ossrhUsername, password: ossrhPassword)
+                    }
+
+                    pom.project {
+                        name 'DroidKit Engines'
+                        packaging 'aar'
+                        description 'DroidKit Engines: data engines for ui lists, key-value storage and event processing'
+                        url 'https://github.com/secretapphd/droidkit-engines'
+
+                        scm {
+                            url 'scm:git@github.com:secretapphd/droidkit-engines.git'
+                            connection 'scm:git@github.com:secretapphd/droidkit-engines.git'
+                            developerConnection 'scm:git@github.com:secretapphd/droidkit-engines.git'
+                        }
+
+                        licenses {
+                            license {
+                                name 'The MIT License (MIT)'
+                                url 'http://opensource.org/licenses/MIT'
+                                distribution 'repo'
+                            }
+                        }
+
+                        developers {
+                            developer {
+                                id 'ex3ndr'
+                                name 'Stepan Korshakov'
+                            }
+                            developer {
+                                id 'rayevg'
+                                name 'Evgeny Avsievich'
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

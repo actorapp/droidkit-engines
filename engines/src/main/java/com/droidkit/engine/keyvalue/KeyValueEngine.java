@@ -4,6 +4,7 @@ import android.support.v4.util.LruCache;
 
 import com.droidkit.actors.ActorRef;
 import com.droidkit.actors.ActorSystem;
+import com.droidkit.engine.Engines;
 import com.droidkit.engine._internal.RunnableActor;
 import com.droidkit.engine._internal.util.Utils;
 import com.droidkit.engine.common.ValueCallback;
@@ -15,6 +16,10 @@ import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class KeyValueEngine<V> {
+
+    static {
+        Engines.init();
+    }
 
     private static final String TAG = "KeyValueEngine";
 

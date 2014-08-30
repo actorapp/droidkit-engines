@@ -7,9 +7,6 @@ import android.os.Looper;
 import android.support.v7.app.ActionBarActivity;
 import android.text.TextUtils;
 
-import com.droidkit.engine._internal.core.Logger;
-
-
 public class BaseActivity extends ActionBarActivity {
 
     protected static final Handler handler = new Handler(Looper.getMainLooper());
@@ -18,7 +15,7 @@ public class BaseActivity extends ActionBarActivity {
     protected volatile ProgressDialog progressDialog;
 
     @Override
-    protected void onCreate (Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         ActivityHelper.tide(this);
 
@@ -30,18 +27,18 @@ public class BaseActivity extends ActionBarActivity {
             @Override
             public void run() {
                 synchronized (progressDialogSync) {
-                    if(progressDialog == null) {
+                    if (progressDialog == null) {
                         progressDialog = new ProgressDialog(BaseActivity.this);
                         progressDialog.setIndeterminate(true);
                         progressDialog.setCancelable(true);
                     }
-                    if(!TextUtils.isEmpty(title)) {
+                    if (!TextUtils.isEmpty(title)) {
                         progressDialog.setTitle(title);
                     } else {
                         progressDialog.setTitle("");
                     }
 
-                    if(!TextUtils.isEmpty(text)) {
+                    if (!TextUtils.isEmpty(text)) {
                         progressDialog.setMessage(text);
                     } else {
                         progressDialog.setMessage("");
@@ -56,12 +53,12 @@ public class BaseActivity extends ActionBarActivity {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                if(progressDialog != null && progressDialog.isShowing()) {
+                if (progressDialog != null && progressDialog.isShowing()) {
                     try {
                         progressDialog.dismiss();
                     } catch (final IllegalArgumentException e) {
                         // Sometimes we may get "View not attached to window manager"
-                        Logger.e(e);
+                        e.printStackTrace();
                     }
                 }
             }
